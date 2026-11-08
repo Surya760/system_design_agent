@@ -32,7 +32,7 @@ const elements = {
   pitchTitle: document.getElementById('pitchTitleInput'),
   pitchText: document.getElementById('pitchTextInput'),
   targetDau: document.getElementById('targetDauInput'),
-  geminiModel: document.getElementById('geminiModelSelect'),
+  modelSelect: document.getElementById('modelSelect'),
   
   // Buttons
   btnGenerate: document.getElementById('btnGenerate'),
@@ -42,7 +42,8 @@ const elements = {
   btnCloseSettings: document.getElementById('btnCloseSettings'),
   btnCancelSettings: document.getElementById('btnCancelSettings'),
   btnSaveSettings: document.getElementById('btnSaveSettings'),
-  btnToggleKey: document.getElementById('btnToggleKey'),
+  btnToggleAnthropicKey: document.getElementById('btnToggleAnthropicKey'),
+  btnToggleGeminiKey: document.getElementById('btnToggleGeminiKey'),
   btnCopyMarkdown: document.getElementById('btnCopyMarkdown'),
   btnDownloadMarkdown: document.getElementById('btnDownloadMarkdown'),
   
@@ -50,6 +51,7 @@ const elements = {
   specHistoryList: document.getElementById('specHistoryList'),
   specSearchInput: document.getElementById('specSearchInput'),
   settingsModal: document.getElementById('settingsModal'),
+  settingsAnthropicKey: document.getElementById('settingsAnthropicKey'),
   settingsGeminiKey: document.getElementById('settingsGeminiKey'),
   settingsDefaultModel: document.getElementById('settingsDefaultModel'),
   settingsDefaultDau: document.getElementById('settingsDefaultDau'),
@@ -300,8 +302,12 @@ async function startGeneration(isMock = false) {
 
   const title = elements.pitchTitle.value.trim() || null;
   const dau = parseInt(elements.targetDau.value, 10) || 50000;
-  const model = elements.geminiModel.value;
-  const apiKey = localStorage.getItem('gemini_api_key') || '';
+  const model = elements.modelSelect.value;
+  const isClaude = model.startsWith('claude');
+  const provider = isMock ? 'mock' : (isClaude ? 'anthropic' : 'gemini');
+
+  const geminiKey = localStorage.getItem('gemini_api_key') || '';
+  const anthropicKey = localStorage.getItem('anthropic_api_key') || '';
 
   // Switch to Stepper Progress View
   resetStepper();
@@ -312,9 +318,10 @@ async function startGeneration(isMock = false) {
     pitch,
     title,
     dau,
-    provider: isMock ? 'mock' : 'gemini',
+    provider,
     model,
-    gemini_api_key: apiKey,
+    gemini_api_key: geminiKey,
+    anthropic_api_key: anthropicKey,
     stream: true,
   };
 
@@ -443,9 +450,16 @@ function setupEventListeners() {
     renderHistoryList(filtered);
   });
 
+  // Model change listener
+  elements.modelSelect.addEventListener('change', (e) => {
+    const val = e.target.value;
+    updateModelUI(val);
+  });
+
   // Settings Modal
   elements.btnOpenSettings.addEventListener('click', () => {
     elements.settingsGeminiKey.value = localStorage.getItem('gemini_api_key') || '';
+    elements.settingsAnthropicKey.value = localStorage.getItem('anthropic_api_key') || '';
     elements.settingsModal.classList.add('active');
   });
 
@@ -453,16 +467,26 @@ function setupEventListeners() {
   elements.btnCloseSettings.addEventListener('click', closeSettings);
   elements.btnCancelSettings.addEventListener('click', closeSettings);
 
-  elements.btnToggleKey.addEventListener('click', () => {
+  elements.btnToggleGeminiKey.addEventListener('click', () => {
     const isPw = elements.settingsGeminiKey.type === 'password';
     elements.settingsGeminiKey.type = isPw ? 'text' : 'password';
-    elements.btnToggleKey.textContent = isPw ? '🔒' : '👁️';
+    elements.btnToggleGeminiKey.textContent = isPw ? '🔒' : '👁️';
+  });
+
+  elements.btnToggleAnthropicKey.addEventListener('click', () => {
+    const isPw = elements.settingsAnthropicKey.type === 'password';
+    elements.settingsAnthropicKey.type = isPw ? 'text' : 'password';
+    elements.btnToggleAnthropicKey.textContent = isPw ? '🔒' : '👁️';
   });
 
   elements.btnSaveSettings.addEventListener('click', async () => {
-    const key = elements.settingsGeminiKey.value.trim();
-    if (key) {
-      localStorage.setItem('gemini_api_key', key);
+    const gKey = elements.settingsGeminiKey.value.trim();
+    if (gKey) {
+      localStorage.setItem('gemini_api_key', gKey);
+    }
+    const aKey = elements.settingsAnthropicKey.value.trim();
+    if (aKey) {
+      localStorage.setItem('anthropic_api_key', aKey);
     }
     const model = elements.settingsDefaultModel.value;
     const dau = parseInt(elements.settingsDefaultDau.value, 10) || 50000;
@@ -472,19 +496,32 @@ function setupEventListeners() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          gemini_api_key: key,
-          gemini_model: model,
+          gemini_api_key: gKey,
+          anthropic_api_key: aKey,
+          model: model,
           default_dau: dau,
         }),
       });
-      elements.geminiModel.value = model;
+      elements.modelSelect.value = model;
       elements.targetDau.value = dau;
-      updateProviderPill('Gemini ' + model.replace('gemini-', ''));
+      updateModelUI(model);
       closeSettings();
     } catch (err) {
       alert('Error updating config on server: ' + err.message);
     }
   });
+}
+
+function updateModelUI(model) {
+  if (model.startsWith('claude')) {
+    const isOpus = model.includes('opus');
+    const label = isOpus ? 'Claude 3 Opus' : (model.includes('sonnet') ? 'Claude Sonnet' : 'Claude Haiku');
+    elements.btnGenerate.innerHTML = `<span>✨</span> Generate with ${label}`;
+    updateProviderPill(label);
+  } else {
+    elements.btnGenerate.innerHTML = `<span>✨</span> Generate with Gemini`;
+    updateProviderPill('Gemini ' + model.replace('gemini-', ''));
+  }
 }
 
 function updateProviderPill(text) {

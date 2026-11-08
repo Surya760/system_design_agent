@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import logging
 from system_design_agent.config import AgentConfig
+from system_design_agent.llm.anthropic import AnthropicClient
 from system_design_agent.llm.base import LLMClient, LLMResponse
 from system_design_agent.llm.gemini import GeminiClient
 from system_design_agent.llm.mock import MockLLMClient
@@ -23,6 +24,16 @@ def get_llm_client(config: AgentConfig) -> LLMClient:
         return GeminiClient(
             api_key=config.gemini_api_key,
             model=config.gemini_model,
+            timeout=config.timeout_seconds,
+        )
+
+    elif provider in ("anthropic", "claude"):
+        if not config.anthropic_api_key:
+            raise ValueError("ANTHROPIC_API_KEY is required for Claude/Anthropic provider.")
+        return AnthropicClient(
+            api_key=config.anthropic_api_key,
+            model=config.anthropic_model,
+            base_url=config.anthropic_base_url,
             timeout=config.timeout_seconds,
         )
 
@@ -54,4 +65,12 @@ def get_llm_client(config: AgentConfig) -> LLMClient:
         return MockLLMClient()
 
 
-__all__ = ["LLMClient", "LLMResponse", "get_llm_client", "GeminiClient", "OpenAICompatClient", "MockLLMClient"]
+__all__ = [
+    "LLMClient",
+    "LLMResponse",
+    "get_llm_client",
+    "GeminiClient",
+    "AnthropicClient",
+    "OpenAICompatClient",
+    "MockLLMClient",
+]

@@ -45,6 +45,8 @@ def handle_generate(args: argparse.Namespace) -> None:
     if args.model:
         if config.resolve_provider() == "gemini":
             config.gemini_model = args.model
+        elif config.resolve_provider() in ("anthropic", "claude"):
+            config.anthropic_model = args.model
         elif config.resolve_provider() == "openai":
             config.openai_model = args.model
         elif config.resolve_provider() == "ollama":
@@ -177,7 +179,7 @@ def build_parser() -> argparse.ArgumentParser:
     gen_parser.add_argument("--title", type=str, default=None, help="Explicit title for the specification")
     gen_parser.add_argument("--dau", type=int, default=50_000, help="Target Daily Active Users scale baseline (default: 50,000)")
     gen_parser.add_argument("--output", "-o", type=str, default=None, help="Output markdown file path")
-    gen_parser.add_argument("--provider", "-p", type=str, choices=["gemini", "openai", "ollama", "mock"], default=None, help="LLM Provider override")
+    gen_parser.add_argument("--provider", "-p", type=str, choices=["gemini", "anthropic", "claude", "openai", "ollama", "mock"], default=None, help="LLM Provider override")
     gen_parser.add_argument("--model", "-m", type=str, default=None, help="Model name override")
 
     # Command: interactive

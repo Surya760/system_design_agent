@@ -53,24 +53,33 @@ Open **`http://127.0.0.1:8000`** in your browser:
 - History sidebar storing all generated specs in SQLite `specs.db`.
 - Input your `GEMINI_API_KEY` directly in Settings or via `.env`.
 
-### 2. Configure Google Gemini
+### 2. Configure LLM API Keys (Gemini or Claude Opus)
 Copy `.env.example` to `.env`:
 ```bash
 cp .env.example .env
 ```
-Add your key:
-```bash
-GEMINI_API_KEY=AIzaSy...
-GEMINI_MODEL=gemini-2.5-flash
-```
+Add your preferred key(s):
+- **Anthropic Claude (Opus):**
+  ```bash
+  ANTHROPIC_API_KEY=sk-ant-api03-...
+  ANTHROPIC_MODEL=claude-3-opus-20240229
+  ```
+- **Google Gemini:**
+  ```bash
+  GEMINI_API_KEY=AIzaSy...
+  GEMINI_MODEL=gemini-2.5-flash
+  ```
 
 ### 3. Command-Line Interface (CLI)
 ```bash
+# Generate with Claude 3 Opus
+python3 -m system_design_agent generate "Real-time collaborative code editor" --provider anthropic --model claude-3-opus-20240229
+
+# Generate with Gemini 2.5 Flash
+python3 -m system_design_agent generate "Distributed event-driven ticketing engine" --provider gemini
+
 # Offline Dry Run with Mock Agent (0 API tokens consumed)
 python3 -m system_design_agent mock "High-throughput URL shortener with analytics"
-
-# Full Generation with Gemini
-python3 -m system_design_agent generate "Real-time collaborative whiteboarding canvas" --dau 100000
 
 # Interactive CLI Pitch Wizard
 python3 -m system_design_agent interactive

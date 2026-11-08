@@ -94,13 +94,22 @@ class DesignAgentHTTPHandler(SimpleHTTPRequestHandler):
         if path == "/api/config":
             provider = self.config.resolve_provider()
             has_gemini = bool(self.config.gemini_api_key)
+            has_anthropic = bool(self.config.anthropic_api_key)
             self._send_json(200, {
                 "provider": provider,
                 "gemini_model": self.config.gemini_model,
+                "anthropic_model": self.config.anthropic_model,
                 "has_gemini_key": has_gemini,
+                "has_anthropic_key": has_anthropic,
                 "default_dau": self.config.default_dau,
-                "available_providers": ["gemini", "mock", "openai", "ollama"],
+                "available_providers": ["gemini", "anthropic", "mock", "openai", "ollama"],
                 "gemini_models": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-pro", "gemini-2.0-flash"],
+                "claude_models": [
+                    "claude-3-opus-20240229",
+                    "claude-3-7-sonnet-20250219",
+                    "claude-3-5-sonnet-20241022",
+                    "claude-3-5-haiku-20241022",
+                ],
             })
             return
 
@@ -167,7 +176,7 @@ class DesignAgentHTTPHandler(SimpleHTTPRequestHandler):
             self._send_error(400, "Invalid JSON payload in request body")
             return
 
-        # POST /api/config: update runtime config (e.g. set Gemini API key)
+        # POST /api/config: update runtime config (e.g. set Gemini or Anthropic API key)
         if path == "/api/config":
             if "gemini_api_key" in payload:
                 key = payload["gemini_api_key"].strip()
@@ -176,6 +185,13 @@ class DesignAgentHTTPHandler(SimpleHTTPRequestHandler):
                     self.config.provider = "gemini"
             if "gemini_model" in payload:
                 self.config.gemini_model = payload["gemini_model"].strip()
+            if "anthropic_api_key" in payload:
+                key = payload["anthropic_api_key"].strip()
+                if key:
+                    self.config.anthropic_api_key = key
+                    self.config.provider = "anthropic"
+            if "anthropic_model" in payload:
+                self.config.anthropic_model = payload["anthropic_model"].strip()
             if "provider" in payload:
                 self.config.provider = payload["provider"].strip().lower()
             if "default_dau" in payload:
@@ -185,7 +201,9 @@ class DesignAgentHTTPHandler(SimpleHTTPRequestHandler):
                 "message": "Configuration updated successfully",
                 "provider": self.config.resolve_provider(),
                 "gemini_model": self.config.gemini_model,
+                "anthropic_model": self.config.anthropic_model,
                 "has_gemini_key": bool(self.config.gemini_api_key),
+                "has_anthropic_key": bool(self.config.anthropic_api_key),
             })
             return
 
@@ -200,13 +218,16 @@ class DesignAgentHTTPHandler(SimpleHTTPRequestHandler):
             dau = int(payload.get("dau", self.config.default_dau))
             provider_override = payload.get("provider")
             model_override = payload.get("model")
-            api_key_override = payload.get("gemini_api_key")
+            gemini_key_override = payload.get("gemini_api_key")
+            anthropic_key_override = payload.get("anthropic_api_key")
 
             # Local config override for this generation job
             run_config = AgentConfig(
                 provider=provider_override or self.config.provider or "gemini",
-                gemini_model=model_override or self.config.gemini_model,
-                gemini_api_key=api_key_override or self.config.gemini_api_key,
+                gemini_model=model_override if (provider_override or self.config.provider) == "gemini" else self.config.gemini_model,
+                anthropic_model=model_override if (provider_override or self.config.provider) in ("anthropic", "claude") else self.config.anthropic_model,
+                gemini_api_key=gemini_key_override or self.config.gemini_api_key,
+                anthropic_api_key=anthropic_key_override or self.config.anthropic_api_key,
                 default_dau=dau,
                 database_path=self.config.database_path,
                 output_dir=self.config.output_dir,
