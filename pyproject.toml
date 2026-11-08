@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "system-design-agent"
+version = "1.0.0"
+description = "Autonomous agent pipeline that transforms raw project ideas into production-grade Technical Specification Documents."
+readme = "README.md"
+authors = [{ name = "Principal Systems Architect" }]
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pydantic>=2.7.0",
+    "rich>=13.7.0",
+]
+
+[project.scripts]
+system-design-agent = "system_design_agent.cli:main"

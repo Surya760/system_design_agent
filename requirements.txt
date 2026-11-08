@@ -1,0 +1,5 @@
+# Core pipeline runs with Python 3.10+ standard library.
+# Optional enhancements for richer output and developer tooling:
+# pydantic>=2.7.0
+# rich>=13.7.0
+# pytest>=8.0.0
