@@ -53,7 +53,7 @@ Open **`http://127.0.0.1:8000`** in your browser:
 - History sidebar storing all generated specs in SQLite `specs.db`.
 - Input your `GEMINI_API_KEY` directly in Settings or via `.env`.
 
-### 2. Configure LLM API Keys (Gemini or Claude Opus)
+### 2. Configure LLM API Keys (Gemini, Claude Opus, or OpenAI)
 Copy `.env.example` to `.env`:
 ```bash
 cp .env.example .env
@@ -64,6 +64,12 @@ Add your preferred key(s):
   ANTHROPIC_API_KEY=sk-ant-api03-...
   ANTHROPIC_MODEL=claude-3-opus-20240229
   ```
+- **OpenAI (GPT-4o, o3-mini, o1):**
+  ```bash
+  OPENAI_API_KEY=sk-...
+  OPENAI_MODEL=gpt-4o  # or o3-mini, o1, gpt-4o-mini
+  OPENAI_BASE_URL=https://api.openai.com/v1  # or Groq / DeepSeek
+  ```
 - **Google Gemini:**
   ```bash
   GEMINI_API_KEY=AIzaSy...
@@ -72,11 +78,19 @@ Add your preferred key(s):
 
 ### 3. Command-Line Interface (CLI)
 ```bash
+# Generate with OpenAI GPT-4o or o3-mini
+python3 -m system_design_agent generate "Distributed event-driven transaction ledger" \
+  --provider openai \
+  --model gpt-4o
+
 # Generate with Claude 3 Opus
-python3 -m system_design_agent generate "Real-time collaborative code editor" --provider anthropic --model claude-3-opus-20240229
+python3 -m system_design_agent generate "Real-time collaborative code editor" \
+  --provider anthropic \
+  --model claude-3-opus-20240229
 
 # Generate with Gemini 2.5 Flash
-python3 -m system_design_agent generate "Distributed event-driven ticketing engine" --provider gemini
+python3 -m system_design_agent generate "Distributed ticketing engine" \
+  --provider gemini
 
 # Offline Dry Run with Mock Agent (0 API tokens consumed)
 python3 -m system_design_agent mock "High-throughput URL shortener with analytics"

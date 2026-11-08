@@ -109,6 +109,13 @@ e.g. Build a high-throughput URL shortener with real-time analytics, vanity slug
                 <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (High Accuracy)</option>
                 <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Fast & Lightweight)</option>
               </optgroup>
+              <optgroup label="OpenAI Models (GPT-4o & Reasoning)">
+                <option value="gpt-4o">GPT-4o (Flagship Omni)</option>
+                <option value="gpt-4o-mini">GPT-4o Mini (Fast & Cost-Efficient)</option>
+                <option value="o3-mini">o3-mini (Advanced Reasoning)</option>
+                <option value="o1">o1 (Deep Architectural Reasoning)</option>
+                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+              </optgroup>
               <optgroup label="Google Gemini">
                 <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (Blazing Fast)</option>
                 <option value="gemini-2.5-pro">Gemini 2.5 Pro (Deep Architectural Reasoning)</option>
@@ -247,6 +254,21 @@ e.g. Build a high-throughput URL shortener with real-time analytics, vanity slug
         </div>
 
         <div class="form-group">
+          <label for="settingsOpenAIKey">OpenAI API Key (For GPT-4o / o1 / o3-mini)</label>
+          <div class="input-with-toggle">
+            <input type="password" id="settingsOpenAIKey" placeholder="sk-..." class="input-text">
+            <button class="btn-toggle-pw" id="btnToggleOpenAIKey">👁️</button>
+          </div>
+          <span class="input-hint">Required for OpenAI. Get one at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI Platform</a>.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="settingsOpenAIBaseUrl">OpenAI Base URL <span class="dim">(Optional - defaults to official API)</span></label>
+          <input type="text" id="settingsOpenAIBaseUrl" placeholder="https://api.openai.com/v1" class="input-text">
+          <span class="input-hint">Can be pointed to Groq, DeepSeek, OpenRouter, or LocalAI.</span>
+        </div>
+
+        <div class="form-group">
           <label for="settingsGeminiKey">Google Gemini API Key</label>
           <div class="input-with-toggle">
             <input type="password" id="settingsGeminiKey" placeholder="AIzaSy..." class="input-text">
@@ -258,8 +280,9 @@ e.g. Build a high-throughput URL shortener with real-time analytics, vanity slug
         <div class="form-group">
           <label for="settingsDefaultModel">Default Model</label>
           <select id="settingsDefaultModel" class="select">
+            <option value="gpt-4o">GPT-4o (OpenAI Flagship)</option>
+            <option value="o3-mini">o3-mini (OpenAI Advanced Reasoning)</option>
             <option value="claude-3-opus-20240229">Claude 3 Opus (Deepest LLD & HLD Rigor)</option>
-            <option value="claude-3-7-sonnet-20250219">Claude 3.7 Sonnet</option>
             <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
             <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
           </select>

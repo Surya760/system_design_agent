@@ -95,20 +95,31 @@ class DesignAgentHTTPHandler(SimpleHTTPRequestHandler):
             provider = self.config.resolve_provider()
             has_gemini = bool(self.config.gemini_api_key)
             has_anthropic = bool(self.config.anthropic_api_key)
+            has_openai = bool(self.config.openai_api_key)
             self._send_json(200, {
                 "provider": provider,
                 "gemini_model": self.config.gemini_model,
                 "anthropic_model": self.config.anthropic_model,
+                "openai_model": self.config.openai_model,
+                "openai_base_url": self.config.openai_base_url,
                 "has_gemini_key": has_gemini,
                 "has_anthropic_key": has_anthropic,
+                "has_openai_key": has_openai,
                 "default_dau": self.config.default_dau,
-                "available_providers": ["gemini", "anthropic", "mock", "openai", "ollama"],
+                "available_providers": ["gemini", "anthropic", "openai", "ollama", "mock"],
                 "gemini_models": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-pro", "gemini-2.0-flash"],
                 "claude_models": [
                     "claude-3-opus-20240229",
                     "claude-3-7-sonnet-20250219",
                     "claude-3-5-sonnet-20241022",
                     "claude-3-5-haiku-20241022",
+                ],
+                "openai_models": [
+                    "gpt-4o",
+                    "gpt-4o-mini",
+                    "o3-mini",
+                    "o1",
+                    "gpt-4-turbo",
                 ],
             })
             return
@@ -176,7 +187,7 @@ class DesignAgentHTTPHandler(SimpleHTTPRequestHandler):
             self._send_error(400, "Invalid JSON payload in request body")
             return
 
-        # POST /api/config: update runtime config (e.g. set Gemini or Anthropic API key)
+        # POST /api/config: update runtime config (Gemini, Anthropic, or OpenAI API keys)
         if path == "/api/config":
             if "gemini_api_key" in payload:
                 key = payload["gemini_api_key"].strip()
@@ -192,6 +203,15 @@ class DesignAgentHTTPHandler(SimpleHTTPRequestHandler):
                     self.config.provider = "anthropic"
             if "anthropic_model" in payload:
                 self.config.anthropic_model = payload["anthropic_model"].strip()
+            if "openai_api_key" in payload:
+                key = payload["openai_api_key"].strip()
+                if key:
+                    self.config.openai_api_key = key
+                    self.config.provider = "openai"
+            if "openai_model" in payload:
+                self.config.openai_model = payload["openai_model"].strip()
+            if "openai_base_url" in payload:
+                self.config.openai_base_url = payload["openai_base_url"].strip()
             if "provider" in payload:
                 self.config.provider = payload["provider"].strip().lower()
             if "default_dau" in payload:
@@ -202,8 +222,10 @@ class DesignAgentHTTPHandler(SimpleHTTPRequestHandler):
                 "provider": self.config.resolve_provider(),
                 "gemini_model": self.config.gemini_model,
                 "anthropic_model": self.config.anthropic_model,
+                "openai_model": self.config.openai_model,
                 "has_gemini_key": bool(self.config.gemini_api_key),
                 "has_anthropic_key": bool(self.config.anthropic_api_key),
+                "has_openai_key": bool(self.config.openai_api_key),
             })
             return
 
@@ -220,14 +242,19 @@ class DesignAgentHTTPHandler(SimpleHTTPRequestHandler):
             model_override = payload.get("model")
             gemini_key_override = payload.get("gemini_api_key")
             anthropic_key_override = payload.get("anthropic_api_key")
+            openai_key_override = payload.get("openai_api_key")
 
             # Local config override for this generation job
+            resolved_prov = provider_override or self.config.provider or "gemini"
             run_config = AgentConfig(
-                provider=provider_override or self.config.provider or "gemini",
-                gemini_model=model_override if (provider_override or self.config.provider) == "gemini" else self.config.gemini_model,
-                anthropic_model=model_override if (provider_override or self.config.provider) in ("anthropic", "claude") else self.config.anthropic_model,
+                provider=resolved_prov,
+                gemini_model=model_override if resolved_prov == "gemini" else self.config.gemini_model,
+                anthropic_model=model_override if resolved_prov in ("anthropic", "claude") else self.config.anthropic_model,
+                openai_model=model_override if resolved_prov == "openai" else self.config.openai_model,
                 gemini_api_key=gemini_key_override or self.config.gemini_api_key,
                 anthropic_api_key=anthropic_key_override or self.config.anthropic_api_key,
+                openai_api_key=openai_key_override or self.config.openai_api_key,
+                openai_base_url=self.config.openai_base_url,
                 default_dau=dau,
                 database_path=self.config.database_path,
                 output_dir=self.config.output_dir,

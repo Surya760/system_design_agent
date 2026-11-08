@@ -44,6 +44,7 @@ const elements = {
   btnSaveSettings: document.getElementById('btnSaveSettings'),
   btnToggleAnthropicKey: document.getElementById('btnToggleAnthropicKey'),
   btnToggleGeminiKey: document.getElementById('btnToggleGeminiKey'),
+  btnToggleOpenAIKey: document.getElementById('btnToggleOpenAIKey'),
   btnCopyMarkdown: document.getElementById('btnCopyMarkdown'),
   btnDownloadMarkdown: document.getElementById('btnDownloadMarkdown'),
   
@@ -53,6 +54,8 @@ const elements = {
   settingsModal: document.getElementById('settingsModal'),
   settingsAnthropicKey: document.getElementById('settingsAnthropicKey'),
   settingsGeminiKey: document.getElementById('settingsGeminiKey'),
+  settingsOpenAIKey: document.getElementById('settingsOpenAIKey'),
+  settingsOpenAIBaseUrl: document.getElementById('settingsOpenAIBaseUrl'),
   settingsDefaultModel: document.getElementById('settingsDefaultModel'),
   settingsDefaultDau: document.getElementById('settingsDefaultDau'),
   
@@ -304,10 +307,20 @@ async function startGeneration(isMock = false) {
   const dau = parseInt(elements.targetDau.value, 10) || 50000;
   const model = elements.modelSelect.value;
   const isClaude = model.startsWith('claude');
-  const provider = isMock ? 'mock' : (isClaude ? 'anthropic' : 'gemini');
+  const isOpenAI = model.startsWith('gpt') || model.startsWith('o1') || model.startsWith('o3');
+  
+  let provider = 'gemini';
+  if (isMock) {
+    provider = 'mock';
+  } else if (isClaude) {
+    provider = 'anthropic';
+  } else if (isOpenAI) {
+    provider = 'openai';
+  }
 
   const geminiKey = localStorage.getItem('gemini_api_key') || '';
   const anthropicKey = localStorage.getItem('anthropic_api_key') || '';
+  const openaiKey = localStorage.getItem('openai_api_key') || '';
 
   // Switch to Stepper Progress View
   resetStepper();
@@ -322,6 +335,7 @@ async function startGeneration(isMock = false) {
     model,
     gemini_api_key: geminiKey,
     anthropic_api_key: anthropicKey,
+    openai_api_key: openaiKey,
     stream: true,
   };
 
@@ -460,6 +474,8 @@ function setupEventListeners() {
   elements.btnOpenSettings.addEventListener('click', () => {
     elements.settingsGeminiKey.value = localStorage.getItem('gemini_api_key') || '';
     elements.settingsAnthropicKey.value = localStorage.getItem('anthropic_api_key') || '';
+    elements.settingsOpenAIKey.value = localStorage.getItem('openai_api_key') || '';
+    elements.settingsOpenAIBaseUrl.value = localStorage.getItem('openai_base_url') || 'https://api.openai.com/v1';
     elements.settingsModal.classList.add('active');
   });
 
@@ -479,15 +495,25 @@ function setupEventListeners() {
     elements.btnToggleAnthropicKey.textContent = isPw ? '🔒' : '👁️';
   });
 
+  elements.btnToggleOpenAIKey.addEventListener('click', () => {
+    const isPw = elements.settingsOpenAIKey.type === 'password';
+    elements.settingsOpenAIKey.type = isPw ? 'text' : 'password';
+    elements.btnToggleOpenAIKey.textContent = isPw ? '🔒' : '👁️';
+  });
+
   elements.btnSaveSettings.addEventListener('click', async () => {
     const gKey = elements.settingsGeminiKey.value.trim();
-    if (gKey) {
-      localStorage.setItem('gemini_api_key', gKey);
-    }
+    if (gKey) localStorage.setItem('gemini_api_key', gKey);
+
     const aKey = elements.settingsAnthropicKey.value.trim();
-    if (aKey) {
-      localStorage.setItem('anthropic_api_key', aKey);
-    }
+    if (aKey) localStorage.setItem('anthropic_api_key', aKey);
+
+    const oKey = elements.settingsOpenAIKey.value.trim();
+    if (oKey) localStorage.setItem('openai_api_key', oKey);
+
+    const oBaseUrl = elements.settingsOpenAIBaseUrl.value.trim();
+    if (oBaseUrl) localStorage.setItem('openai_base_url', oBaseUrl);
+
     const model = elements.settingsDefaultModel.value;
     const dau = parseInt(elements.settingsDefaultDau.value, 10) || 50000;
 
@@ -498,6 +524,8 @@ function setupEventListeners() {
         body: JSON.stringify({
           gemini_api_key: gKey,
           anthropic_api_key: aKey,
+          openai_api_key: oKey,
+          openai_base_url: oBaseUrl,
           model: model,
           default_dau: dau,
         }),
@@ -518,6 +546,14 @@ function updateModelUI(model) {
     const label = isOpus ? 'Claude 3 Opus' : (model.includes('sonnet') ? 'Claude Sonnet' : 'Claude Haiku');
     elements.btnGenerate.innerHTML = `<span>✨</span> Generate with ${label}`;
     updateProviderPill(label);
+  } else if (model.startsWith('gpt') || model.startsWith('o1') || model.startsWith('o3')) {
+    let label = model.toUpperCase();
+    if (model === 'gpt-4o') label = 'GPT-4o';
+    else if (model === 'gpt-4o-mini') label = 'GPT-4o Mini';
+    else if (model === 'o3-mini') label = 'o3-mini';
+    else if (model === 'o1') label = 'o1';
+    elements.btnGenerate.innerHTML = `<span>✨</span> Generate with ${label}`;
+    updateProviderPill('OpenAI ' + label);
   } else {
     elements.btnGenerate.innerHTML = `<span>✨</span> Generate with Gemini`;
     updateProviderPill('Gemini ' + model.replace('gemini-', ''));
