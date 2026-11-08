@@ -10,6 +10,7 @@ import urllib.request
 from typing import Optional
 
 from system_design_agent.llm.base import LLMClient, LLMResponse
+from system_design_agent.llm.ssl_context import get_ssl_context
 
 
 class GeminiClient(LLMClient):
@@ -19,6 +20,7 @@ class GeminiClient(LLMClient):
         self.api_key = api_key
         self.model = model
         self.timeout = timeout
+        self.ssl_context = get_ssl_context()
 
     def generate(
         self,
@@ -55,7 +57,7 @@ class GeminiClient(LLMClient):
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            with urllib.request.urlopen(req, timeout=self.timeout, context=self.ssl_context) as resp:
                 resp_json = json.loads(resp.read().decode("utf-8"))
                 candidates = resp_json.get("candidates", [])
                 if not candidates:

@@ -9,6 +9,7 @@ import urllib.request
 from typing import Optional
 
 from system_design_agent.llm.base import LLMClient, LLMResponse
+from system_design_agent.llm.ssl_context import get_ssl_context
 
 
 class OpenAICompatClient(LLMClient):
@@ -25,6 +26,7 @@ class OpenAICompatClient(LLMClient):
         self.model = model
         self.timeout = timeout
         self.provider_name = provider_name
+        self.ssl_context = get_ssl_context()
 
     def generate(
         self,
@@ -56,7 +58,7 @@ class OpenAICompatClient(LLMClient):
         req = urllib.request.Request(url, data=data_bytes, headers=headers, method="POST")
 
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            with urllib.request.urlopen(req, timeout=self.timeout, context=self.ssl_context) as resp:
                 resp_json = json.loads(resp.read().decode("utf-8"))
                 choices = resp_json.get("choices", [])
                 if not choices:
