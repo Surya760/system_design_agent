@@ -36,35 +36,46 @@ graph TD
 
 ## 🚀 Quick Start (Zero External Dependencies Required!)
 
-The core pipeline is built strictly with Python 3.10+ standard libraries (`urllib.request`, `dataclasses`, `sqlite3`, `argparse`). No third-party packages are strictly needed to run out-of-the-box!
+The core pipeline and Web dashboard are built strictly with Python 3.10+ standard libraries (`urllib.request`, `http.server`, `dataclasses`, `sqlite3`). No third-party packages are needed to run!
 
-### 1. Run a Dry Run / Mock Generation (Offline & Instant)
+### 1. Launch the Interactive Web UI
+Simply run:
 ```bash
-python3 -m system_design_agent mock "A high-throughput URL shortener with real-time click analytics and vanity domains"
+python3 -m system_design_agent serve
+# or simply:
+python3 -m system_design_agent
 ```
+Open **`http://127.0.0.1:8000`** in your browser:
+- Real-time animated 6-stage multi-agent progress stepper.
+- Live-rendered **Mermaid architecture diagrams** and sequence flows.
+- Tabbed section view (Requirements, HLD, LLD, Resilience, Action Plan).
+- 1-click Markdown export and copy.
+- History sidebar storing all generated specs in SQLite `specs.db`.
+- Input your `GEMINI_API_KEY` directly in Settings or via `.env`.
 
-### 2. Configure LLM API Keys
+### 2. Configure Google Gemini
 Copy `.env.example` to `.env`:
 ```bash
 cp .env.example .env
 ```
-Fill in your preferred provider:
-- **Google Gemini:** `GEMINI_API_KEY=your_key_here` (Default: `gemini-2.5-flash`)
-- **OpenAI:** `OPENAI_API_KEY=your_key_here` (Default: `gpt-4o`)
-- **Ollama (Local LLM):** Set `LLM_PROVIDER=ollama` and `OLLAMA_MODEL=llama3.1:8b`
-
-### 3. Generate a Real Specification
+Add your key:
 ```bash
-python3 -m system_design_agent generate "Real-time collaborative whiteboarding canvas with infinite zoom and live cursor presence" --dau 100000
+GEMINI_API_KEY=AIzaSy...
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
-### 4. Interactive Mode
+### 3. Command-Line Interface (CLI)
 ```bash
+# Offline Dry Run with Mock Agent (0 API tokens consumed)
+python3 -m system_design_agent mock "High-throughput URL shortener with analytics"
+
+# Full Generation with Gemini
+python3 -m system_design_agent generate "Real-time collaborative whiteboarding canvas" --dau 100000
+
+# Interactive CLI Pitch Wizard
 python3 -m system_design_agent interactive
-```
 
-### 5. View Previously Generated Specifications
-```bash
+# List Generated Specifications
 python3 -m system_design_agent list
 ```
 
