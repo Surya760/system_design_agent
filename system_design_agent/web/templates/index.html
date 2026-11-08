@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autonomous System Design Agent</title>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Markdown parser & Mermaid diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <!-- Top Navigation -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <h1 class="brand-title">System Design Agent</h1>
+        <span class="brand-subtitle">Principal Architect Specification Engine</span>
+      </div>
+    </div>
+    
+    <div class="topbar-actions">
+      <div class="provider-pill" id="providerPill">
+        <span class="provider-dot"></span>
+        <span id="providerText">Gemini 2.5 Flash</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" id="btnOpenSettings">
+        ⚙️ Settings
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="app-layout">
+    <!-- Left Sidebar: History -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <button class="btn btn-primary btn-block" id="btnNewSpec">
+          <span>➕</span> New Specification
+        </button>
+      </div>
+
+      <div class="sidebar-search">
+        <input type="text" id="specSearchInput" placeholder="Filter specifications..." class="input-search">
+      </div>
+
+      <div class="spec-history-list" id="specHistoryList">
+        <div class="loading-placeholder">Loading saved specs...</div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+      <!-- Pitch Input View -->
+      <section id="pitchView" class="view-panel active">
+        <div class="panel-header">
+          <h2>Transform Ambiguous Ideas into Production Blueprints</h2>
+          <p class="panel-desc">
+            Enter any raw project pitch. The autonomous multi-agent pipeline will synthesize functional/non-functional requirements (50k DAU baseline), architecture topologies, PostgreSQL 16 DDL, API contracts, resilience rules, and a 4-phase developer checklist.
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label for="pitchTitleInput">Specification Title <span class="dim">(Optional - auto-inferred if omitted)</span></label>
+          <input type="text" id="pitchTitleInput" placeholder="e.g., Distributed Event-Driven Flash Sale Engine" class="input-text">
+        </div>
+
+        <div class="form-group">
+          <div class="label-row">
+            <label for="pitchTextInput">Project Pitch & Concept <span class="required">*</span></label>
+            <span class="dim text-xs">Be as rough or detailed as you like</span>
+          </div>
+          <textarea id="pitchTextInput" rows="6" class="textarea" placeholder="Pitch your project idea here...
+e.g. Build a high-throughput URL shortener with real-time analytics, vanity slugs, and automated link expiration."></textarea>
+        </div>
+
+        <!-- Example Quick-Fill Pills -->
+        <div class="examples-container">
+          <span class="text-xs dim">Quick Examples:</span>
+          <div class="example-chips">
+            <button class="chip" data-pitch="A high-throughput URL shortener with real-time click analytics, custom vanity domains, and automated QR code generation.">🔗 URL Shortener</button>
+            <button class="chip" data-pitch="Real-time collaborative code editor with WebSocket cursor presence, operational transforms, and syntax highlighting execution.">💻 Collab Code Editor</button>
+            <button class="chip" data-pitch="High-concurrency flash sale ticketing platform with virtual waiting room, inventory reservation locks, and fraud detection.">🎟️ Flash Sale Engine</button>
+            <button class="chip" data-pitch="Multi-tenant webhook and push notification gateway with exponential retry queues, dead-letter storage, and delivery receipts.">🔔 Notification Gateway</button>
+          </div>
+        </div>
+
+        <!-- Scale Configuration -->
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="targetDauInput">Target Scale Baseline (DAU)</label>
+            <input type="number" id="targetDauInput" value="50000" step="10000" min="1000" class="input-text">
+            <span class="input-hint">Derives average and peak RPS, storage sizing, and concurrency rules.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="geminiModelSelect">Primary Model</label>
+            <select id="geminiModelSelect" class="select">
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended - Blazing Fast)</option>
+              <option value="gemini-2.5-pro">Gemini 2.5 Pro (Deep Architectural Reasoning)</option>
+              <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+              <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+            </select>
+            <span class="input-hint">Using Google AI Studio REST API.</span>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary btn-lg" id="btnGenerate">
+            <span>✨</span> Generate with Gemini
+          </button>
+          <button class="btn btn-secondary btn-lg" id="btnMockGenerate">
+            <span>🧪</span> Dry Run (Mock 0 Cost)
+          </button>
+        </div>
+      </section>
+
+      <!-- Live Generation Stepper View -->
+      <section id="progressView" class="view-panel">
+        <div class="progress-card">
+          <div class="progress-header">
+            <div class="spinner"></div>
+            <div>
+              <h3 id="currentStageTitle">Initializing Multi-Agent Pipeline...</h3>
+              <p id="currentStageMessage" class="dim">Assembling domain context</p>
+            </div>
+            <div class="timer" id="pipelineTimer">00:00</div>
+          </div>
+
+          <div class="stepper-list">
+            <div class="step-item" id="step-REQUIREMENTS">
+              <div class="step-indicator">1</div>
+              <div class="step-info">
+                <h4>Stage 1: Requirements & Core Assumptions</h4>
+                <p>Synthesizing 4–6 FRs, 50k DAU NFR throughput/latency formulas, and v1 scope</p>
+              </div>
+            </div>
+            <div class="step-item" id="step-HLD">
+              <div class="step-indicator">2</div>
+              <div class="step-info">
+                <h4>Stage 2: High-Level Design (HLD)</h4>
+                <p>Architectural paradigm, Mermaid component topology & technology stack matrix</p>
+              </div>
+            </div>
+            <div class="step-item" id="step-LLD">
+              <div class="step-indicator">3</div>
+              <div class="step-info">
+                <h4>Stage 3: Low-Level Design (LLD)</h4>
+                <p>Complete PostgreSQL 16 DDL, REST API contracts, typed domain models & sequence flow</p>
+              </div>
+            </div>
+            <div class="step-item" id="step-RESILIENCE">
+              <div class="step-indicator">4</div>
+              <div class="step-info">
+                <h4>Stage 4: Resilience, Concurrency & Security</h4>
+                <p>Optimistic concurrency control, Redis cache key namespaces, TTLs & sliding rate limits</p>
+              </div>
+            </div>
+            <div class="step-item" id="step-SCAFFOLDING">
+              <div class="step-indicator">5</div>
+              <div class="step-info">
+                <h4>Stage 5: Scaffolding & Action Plan</h4>
+                <p>Modular repository directory tree and 4-phase sequential developer task list</p>
+              </div>
+            </div>
+            <div class="step-item" id="step-VALIDATING">
+              <div class="step-indicator">6</div>
+              <div class="step-info">
+                <h4>Stage 6: Validation & Assembly</h4>
+                <p>Mermaid syntax checking, SQL completeness verification & final artifact compile</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Specification Document Viewer View -->
+      <section id="specView" class="view-panel">
+        <div class="spec-toolbar">
+          <div class="spec-title-group">
+            <h2 id="specViewerTitle">Specification Document</h2>
+            <div class="spec-meta-pills">
+              <span class="meta-pill" id="specMetaDau">50,000 DAU</span>
+              <span class="meta-pill" id="specMetaDuration">Duration: 0s</span>
+              <span class="meta-pill" id="specMetaTokens">Tokens: 0</span>
+              <span class="meta-pill status-pill valid" id="specMetaStatus">PASSED</span>
+            </div>
+          </div>
+          <div class="spec-actions">
+            <button class="btn btn-secondary btn-sm" id="btnCopyMarkdown">
+              📋 Copy Markdown
+            </button>
+            <button class="btn btn-primary btn-sm" id="btnDownloadMarkdown">
+              ⬇️ Download .md
+            </button>
+          </div>
+        </div>
+
+        <!-- Section Navigation Tabs -->
+        <nav class="spec-tabs">
+          <button class="spec-tab active" data-tab="full">📄 Full Specification</button>
+          <button class="spec-tab" data-tab="requirements">📋 1. Requirements</button>
+          <button class="spec-tab" data-tab="hld">🏗️ 2. HLD & Topology</button>
+          <button class="spec-tab" data-tab="lld">💾 3. LLD & Schemas</button>
+          <button class="spec-tab" data-tab="resilience">🛡️ 4. Resilience & Security</button>
+          <button class="spec-tab" data-tab="scaffolding">🚀 5. Action Plan & Scaffolding</button>
+        </nav>
+
+        <!-- Document Content Output Container -->
+        <div class="markdown-container" id="specRenderedOutput">
+          <!-- Rendered HTML injected here -->
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Pipeline Settings</h3>
+        <button class="btn-close" id="btnCloseSettings">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="settingsGeminiKey">Google Gemini API Key</label>
+          <div class="input-with-toggle">
+            <input type="password" id="settingsGeminiKey" placeholder="AIzaSy..." class="input-text">
+            <button class="btn-toggle-pw" id="btnToggleKey">👁️</button>
+          </div>
+          <span class="input-hint">Your API key is stored securely in this local browser session. Get one at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="settingsDefaultModel">Default Gemini Model</label>
+          <select id="settingsDefaultModel" class="select">
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash (Fastest, High Throughput)</option>
+            <option value="gemini-2.5-pro">Gemini 2.5 Pro (Deep Architectural Reasoning)</option>
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="settingsDefaultDau">Default Scale Baseline (DAU)</label>
+          <input type="number" id="settingsDefaultDau" value="50000" class="input-text">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnCancelSettings">Cancel</button>
+        <button class="btn btn-primary" id="btnSaveSettings">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

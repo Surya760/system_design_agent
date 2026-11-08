@@ -193,18 +193,30 @@ def build_parser() -> argparse.ArgumentParser:
     list_parser = subparsers.add_parser("list", help="List previously generated specifications")
     list_parser.add_argument("--limit", type=int, default=15, help="Number of items to show")
 
+    # Command: serve / ui
+    serve_parser = subparsers.add_parser("serve", aliases=["ui"], help="Start the interactive Web UI dashboard")
+    serve_parser.add_argument("--host", type=str, default="127.0.0.1", help="Host interface (default: 127.0.0.1)")
+    serve_parser.add_argument("--port", "-p", type=int, default=8000, help="Port to listen on (default: 8000)")
+
     return parser
 
 
 def main() -> None:
     parser = build_parser()
     if len(sys.argv) == 1:
-        parser.print_help()
-        sys.exit(0)
+        # Default with no arguments: start the web UI!
+        from system_design_agent.web.server import start_server
+        print_banner()
+        start_server(host="127.0.0.1", port=8000)
+        return
 
     args = parser.parse_args()
 
-    if args.command == "generate":
+    if args.command in ("serve", "ui"):
+        print_banner()
+        from system_design_agent.web.server import start_server
+        start_server(host=args.host, port=args.port)
+    elif args.command == "generate":
         handle_generate(args)
     elif args.command == "interactive":
         handle_interactive(args)
