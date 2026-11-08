@@ -126,6 +126,19 @@ graph TD
 | **Primary Database** | PostgreSQL 16 | Proven relational ACID guarantees, JSONB flexibility, and transactional integrity. |
 | **Cache & Task Queue** | Redis 7.2 (Sentinel / Streams) | Sub-millisecond latency for session caching and lightweight queueing without Kafka overhead. |
 | **Hosting & Infra** | AWS ECS Fargate + RDS Multi-AZ | Fully managed containers and automated database backups with zero manual host maintenance. |
+
+#### Cloud Infrastructure & Network Topology
+- **VPC & Network Isolation:**
+  - Dedicated VPC (e.g. `10.0.0.0/16`) spanning 3 Availability Zones (`us-east-1a`, `us-east-1b`, `us-east-1c`).
+  - **Public Subnets (`10.0.1.0/24`, `10.0.2.0/24`):** Hosts Application Load Balancers (ALBs) and managed NAT Gateways.
+  - **Private Application Subnets (`10.0.10.0/24`, `10.0.11.0/24`):** Hosts ECS Fargate container tasks with no direct public internet ingress; outbound traffic routes strictly through NAT Gateways.
+  - **Isolated Database Subnets (`10.0.20.0/24`, `10.0.21.0/24`):** Hosts PostgreSQL 16 RDS Multi-AZ instances and Redis Cluster with zero internet routing; only accessible via security group references from the application subnets.
+- **Compute & Orchestration:**
+  - AWS ECS Fargate cluster with Auto-scaling policies (Target tracking at 70% CPU utilization, scaling from 2 to 10 tasks during peak bursts).
+- **Security & IAM:**
+  - ECS Task Execution IAM Role for pulling images from ECR and reading secrets.
+  - ECS Task Role granting least-privilege KMS decryption and S3 access.
+  - Database credentials stored and rotated automatically in AWS Secrets Manager.
 """
 
     def _stage3_lld(self, prompt: str) -> str:
@@ -328,6 +341,11 @@ sequenceDiagram
 │   ├── Dockerfile
 │   ├── Dockerfile.worker
 │   └── docker-compose.yml       # Local Postgres 16, Redis 7, App & Worker
+├── terraform/
+│   ├── main.tf                  # Provider & backend setup
+│   ├── vpc.tf                   # Public, private & data subnets
+│   ├── ecs.tf                   # ECS Fargate service & autoscaling
+│   └── rds.tf                   # RDS PostgreSQL Multi-AZ
 ├── migrations/
 │   ├── env.py
 │   └── versions/
@@ -363,6 +381,22 @@ sequenceDiagram
 ├── pyproject.toml
 └── README.md
 ```
+
+#### Cloud CI/CD & Deployment Pipeline Blueprint
+1. **Continuous Integration (CI Workflow - `.github/workflows/ci.yml`):**
+   - **Trigger:** On pull request or push to `main`.
+   - **Step 1 (Lint & Format):** Run `ruff` / `black` and static type checking via `mypy`.
+   - **Step 2 (Unit & Integration Tests):** Spin up ephemeral PostgreSQL and Redis service containers; execute `pytest` with coverage thresholds (>80%).
+   - **Step 3 (Container Security Scan):** Build OCI-compliant Docker image and scan for CVEs using `trivy` and secret leaks via `gitleaks`.
+2. **Continuous Delivery (CD Workflow - `.github/workflows/cd.yml`):**
+   - **Trigger:** On merge to `main` branch after CI passes.
+   - **Step 1 (Push to Registry):** Tag image with Git commit SHA and push to AWS ECR.
+   - **Step 2 (Database Migration Job):** Run one-off ECS migration task executing `alembic upgrade head` before updating application containers.
+   - **Step 3 (Zero-Downtime Rollout):** Perform ECS Rolling Deployment with `minimumHealthyPercent = 100%` and `maximumPercent = 200%`. ALB health checks (`/health/ready`) verify new containers before draining traffic from old tasks.
+3. **Observability & Health Probes:**
+   - Liveness probe: `GET /health/live` (confirms event loop is responsive).
+   - Readiness probe: `GET /health/ready` (validates active DB pool connection and Redis ping).
+   - Metrics & Traces: OpenTelemetry instrumentation exporting traces to AWS X-Ray/Datadog; container stdout streamed to CloudWatch Logs via `awslogs` driver.
 
 #### Sequential Implementation Checklist
 

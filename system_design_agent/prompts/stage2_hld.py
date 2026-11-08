@@ -39,8 +39,15 @@ A concise markdown table covering:
 - Web / API Framework
 - Primary Database
 - Cache / Message Broker
-- Infrastructure / Hosting
+- Infrastructure / Hosting (e.g., AWS ECS/EKS, RDS Multi-AZ, S3, CloudFront)
 Include a concise, 1-sentence trade-off rationale for each choice.
+
+#### Cloud Infrastructure & Network Topology
+- Cloud Provider Mapping (AWS, GCP, or Azure):
+  - Network Boundary: VPC CIDR block, Public Subnets (ALB, NAT Gateways), Private Application Subnets (Containers/Compute), and Isolated Data Subnets (RDS, Redis).
+  - Compute & Orchestration: Managed container platform (e.g., AWS ECS Fargate, GCP Cloud Run, or Kubernetes EKS/GKE) with target CPU/Memory allocations.
+  - Security & IAM: IAM roles with least-privilege, AWS Secrets Manager / GCP Secret Manager for credentials, KMS encryption keys.
+  - High Availability & Multi-AZ: Multi-AZ database replication, auto-scaling thresholds (target 70% CPU or queue backlog).
 
 Output format: Return ONLY the GitHub-flavored markdown for Section 2.
 """

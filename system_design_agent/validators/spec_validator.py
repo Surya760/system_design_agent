@@ -43,6 +43,9 @@ class SpecValidator:
             if not has_table:
                 report.add_warning("HLD.TechStack", "Section 2 should include a markdown Technology Stack Matrix table.")
 
+            if not re.search(r"vpc|subnet|ecs|eks|fargate|kubernetes|cloud|hosting", sec2, re.IGNORECASE):
+                report.add_warning("HLD.CloudInfra", "Section 2 should detail Cloud Infrastructure & Network Topology (e.g. VPC, subnets, managed compute).")
+
         # Section 3 Validation (LLD)
         sec3 = spec.lld.raw_markdown
         if not sec3 or len(sec3.strip()) < 100:
@@ -80,5 +83,7 @@ class SpecValidator:
                 report.add_warning("Scaffolding", "Section 5 should contain a checkbox-formatted 4-phase sequential task list.")
             if "Phase 1" not in sec5:
                 report.add_warning("Scaffolding", "Section 5 implementation checklist should be organized by Phase 1 to Phase 4.")
+            if not re.search(r"ci|cd|pipeline|deployment|rollout|docker|terraform", sec5, re.IGNORECASE):
+                report.add_warning("Scaffolding.CloudPipeline", "Section 5 should describe the Cloud CI/CD & Deployment Pipeline.")
 
         return report

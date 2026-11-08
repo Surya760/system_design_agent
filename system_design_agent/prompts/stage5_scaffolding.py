@@ -15,7 +15,14 @@ Required Output Structure:
 ### 5. Developer Action Plan & Scaffolding
 
 #### Repository Directory Tree
-Provide a complete, production-ready directory layout suited for the chosen technology stack (e.g., FastAPI, Node/Express, or Go). Include configuration, migrations, domain models, services, API routers, workers, tests, and CI/CD workflows.
+Provide a complete, production-ready directory layout suited for the chosen technology stack (e.g., FastAPI, Node/Express, or Go). Include configuration, migrations, domain models, services, API routers, workers, tests, IaC (Terraform/Helm), and CI/CD workflows.
+
+#### Cloud CI/CD & Deployment Pipeline Blueprint
+Specify the automated deployment pipeline for shipping code to the cloud:
+- Continuous Integration (CI): Linting & formatting check, unit and integration test pass, container image build, vulnerability & secret scanning (e.g., Trivy, GitGuardian).
+- Continuous Delivery (CD): Push versioned image to Container Registry (e.g., AWS ECR / GCP Artifact Registry), automated pre-deployment DB migration job (Alembic/Prisma/Flyway), and zero-downtime deployment rollout (e.g., Rolling Update with minimum healthy percent = 100%, Blue/Green with ALB traffic shifting, or Canary).
+- Infrastructure as Code (IaC): Concrete Terraform or CloudFormation module layout for provisioning VPC, compute, and databases.
+- Observability & Monitoring: Container health check probes (`/health/live`, `/health/ready`), Prometheus/CloudWatch metric alarms, structured JSON log streaming, and distributed tracing (OpenTelemetry).
 
 #### Sequential Implementation Checklist
 Provide a comprehensive 4-phase, checkbox-formatted (`- [ ]`) task list designed for junior and mid-level developers:
