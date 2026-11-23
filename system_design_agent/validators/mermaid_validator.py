@@ -46,15 +46,18 @@ class MermaidValidator:
             first_line = cleaned.splitlines()[0] if cleaned.splitlines() else ""
             errors.append(f"Invalid or missing Mermaid diagram type header: '{first_line}'. Expected one of {cls.SUPPORTED_DIAGRAM_TYPES[:4]}...")
 
-        # Check bracket balances
-        bracket_pairs = [("[", "]"), ("(", ")"), ("{", "}")]
-        for opening, closing in bracket_pairs:
-            open_count = cleaned.count(opening)
-            close_count = cleaned.count(closing)
-            if open_count != close_count:
-                errors.append(
-                    f"Mismatched bracket count for '{opening}' and '{closing}' ({open_count} opening vs {close_count} closing)."
-                )
+        # ER diagrams use `{` in relationship cardinality markers such as `o{`;
+        # their entity field blocks also use braces, so generic balance counts
+        # incorrectly reject valid Mermaid ER syntax.
+        if not cleaned.startswith("erDiagram"):
+            bracket_pairs = [("[", "]"), ("(", ")"), ("{", "}")]
+            for opening, closing in bracket_pairs:
+                open_count = cleaned.count(opening)
+                close_count = cleaned.count(closing)
+                if open_count != close_count:
+                    errors.append(
+                        f"Mismatched bracket count for '{opening}' and '{closing}' ({open_count} opening vs {close_count} closing)."
+                    )
 
         # Check sequenceDiagram specifics
         if cleaned.startswith("sequenceDiagram"):

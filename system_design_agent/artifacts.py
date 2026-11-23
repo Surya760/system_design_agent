@@ -28,7 +28,7 @@ def _first_block(markdown: str, language: str) -> str:
 
 
 def _section(markdown: str, heading: str) -> str:
-    pattern = rf"^#{2,4}\s+{re.escape(heading)}\s*$([\s\S]*?)(?=^#{2,4}\s+|\Z)"
+    pattern = rf"^#{{2,4}}\s+{re.escape(heading)}\s*$([\s\S]*?)(?=^#{{2,4}}\s+|\Z)"
     match = re.search(pattern, markdown, re.IGNORECASE | re.MULTILINE)
     return match.group(1).strip() if match else ""
 
