@@ -738,6 +738,7 @@ label {
 .diagram-inspector h3 { margin: 0.6rem 0; font-size: 0.95rem; overflow-wrap: anywhere; }
 .diagram-inspector p { color: var(--text-muted); font-size: 0.8rem; line-height: 1.5; }
 .diagram-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-muted); }
+.diagram-empty[hidden] { display: none; }
 
 @media (max-width: 900px) {
   .diagram-layout { grid-template-columns: 1fr; }

@@ -368,17 +368,22 @@ async function renderActiveDiagram() {
       svg.setAttribute('height', String(viewBox.height));
     }
     elements.diagramCanvasLayer.replaceChildren(document.importNode(svg, true));
-    elements.diagramCanvasLayer.querySelectorAll('.node').forEach((node) => {
-      node.setAttribute('tabindex', '0');
-      node.setAttribute('role', 'button');
+    const inspectableNodes = elements.diagramCanvasLayer.querySelectorAll('.node, rect.er.entityBox');
+    inspectableNodes.forEach((node) => {
+      const erEntity = node.matches('rect.er.entityBox');
+      const labelNode = erEntity ? node.nextElementSibling : node;
+      const label = erEntity ? labelNode?.textContent : node.textContent;
       const inspect = () => {
-        const label = node.textContent.trim().replace(/\s+/g, ' ');
-        elements.diagramNodeTitle.textContent = label || node.id || 'Diagram component';
+        elements.diagramNodeTitle.textContent = (label || '').trim().replace(/\s+/g, ' ') || node.id || 'Diagram component';
         elements.diagramNodeDescription.textContent = `Diagram: ${diagram.title}. This component is shown as a node in the generated architecture.`;
       };
-      node.addEventListener('click', inspect);
-      node.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); inspect(); }
+      [node, ...(erEntity && labelNode ? [labelNode] : [])].forEach((target) => {
+        target.setAttribute('tabindex', '0');
+        target.setAttribute('role', 'button');
+        target.addEventListener('click', inspect);
+        target.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); inspect(); }
+        });
       });
     });
     state.canvasScale = 1;
@@ -597,7 +602,7 @@ function setupEventListeners() {
     updateCanvasTransform();
   }, { passive: false });
   elements.diagramViewport.addEventListener('pointerdown', (event) => {
-    if (event.target.closest('.node')) return;
+    if (event.target.closest('.node, rect.er.entityBox, text.er.entityLabel')) return;
     state.canvasPointer = { id: event.pointerId, x: event.clientX, y: event.clientY };
     elements.diagramViewport.setPointerCapture(event.pointerId);
   });
