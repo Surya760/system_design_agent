@@ -133,7 +133,7 @@ class DesignAgentHTTPHandler(SimpleHTTPRequestHandler):
             return
 
         # API: Get single spec
-        if path.startswith("/api/specs/") and not path.endswith("/download") and not path.endswith("/markdown"):
+        if path.startswith("/api/specs/") and not path.endswith(("/download", "/markdown", "/bundle")):
             spec_id = path.split("/")[3]
             spec = self.repo.get_by_id(spec_id)
             if not spec:
