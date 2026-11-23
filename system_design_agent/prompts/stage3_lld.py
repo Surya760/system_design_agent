@@ -15,7 +15,7 @@ Required Output Structure:
 ### 3. Low-Level Design (LLD)
 
 #### Data Layer / Database Schema
-Provide COMPLETE, copy-pasteable PostgreSQL 16 SQL DDL statements (`CREATE TABLE ...`):
+Provide complete schema definitions suited to the recommended datastore. If relational SQL is appropriate, provide executable DDL for the selected supported engine/version (or state the version is unverified):
 - Explicit data types (UUID, TIMESTAMPTZ, VARCHAR(n), JSONB, etc.).
 - Explicit NULL / NOT NULL markers.
 - Primary Keys, Foreign Keys with `ON DELETE` rules, and CHECK constraints.
@@ -23,7 +23,7 @@ Provide COMPLETE, copy-pasteable PostgreSQL 16 SQL DDL statements (`CREATE TABLE
 - STRICT RULE: NEVER write placeholders like '...', '// other columns', or 'TODO'. Every table must be complete and executable.
 
 #### API Contracts
-Provide a clear markdown table covering the essential REST endpoints:
+When an API is in scope, include a machine-readable OpenAPI 3.1 YAML contract in a fenced `yaml` block and a human-readable API contract section. Provide a clear markdown table covering the essential REST endpoints:
 - Columns: `Method`, `Endpoint Path`, `Auth Requirement`, `Request Body (JSON schema/sample)`, `Response Body (JSON schema/sample)`, and `Key Status Codes (200/201/400/401/404/409/500)`.
 
 #### Core Domain Models / Entity Layer
@@ -34,6 +34,9 @@ A valid, renderable Mermaid `sequenceDiagram` mapping out the critical, end-to-e
 - Show participants: Client, Gateway, Service, Cache/Lock, Database, and Worker.
 - Use `autonumber` and conditional blocks (`alt ... else ... end`).
 - Quote participant names if they have spaces or special characters.
+
+#### Data Model Diagram
+Include a valid Mermaid `erDiagram` when the system has a meaningful persistent data model, and keep it consistent with the schema and domain models.
 
 Output format: Return ONLY the GitHub-flavored markdown for Section 3.
 """

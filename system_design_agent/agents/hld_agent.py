@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class HLDAgent(BaseAgent):
-    def run(self, pitch: str, stage1_context: str, target_dau: int = 50_000) -> tuple[HLDSection, int]:
+    skill_references = ("cloud-deployment", "technology-and-data")
+
+    def run(self, pitch: str, stage1_context: str, target_dau: int = 0) -> tuple[HLDSection, int]:
         prompt = STAGE2_PROMPT_TEMPLATE.format(
             pitch=pitch.strip(),
             stage1_context=stage1_context.strip(),

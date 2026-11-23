@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Tests Passing](https://img.shields.io/badge/tests-20%20passed-success.svg)](#-testing)
 
-> An autonomous multi-agent engineering pipeline that transforms raw, ambiguous, or early-stage software project ideas into production-ready **Technical Specification Documents** (High-Level Design, Low-Level Design, Cloud Infrastructure, and CI/CD Pipelines) adhering to Principal Architect standards.
+> An interactive system design agent that uses the [System Design Starter skill](https://github.com/Surya760/system-design-starter) to turn a new idea or existing project into a practical, reviewable architecture and build plan.
 
 ---
 
@@ -17,17 +17,18 @@
   - **Anthropic Claude** (`claude-3-opus-20240229`, `claude-3-7-sonnet-20250219`, `claude-3-5-sonnet-20241022`)
   - **OpenAI** (`gpt-4o`, `gpt-4o-mini`, `o1`, `o3-mini`, `gpt-4-turbo`) with automated reasoning model parameter adaptations
   - **Local Ollama** (`llama3.1:8b`) & **Deterministic Offline Mock** (0 API cost for instant tests)
-- **Interactive Dark-Mode Web Dashboard:** Local web application with live Server-Sent Events (SSE) stage-by-stage progress, real-time in-browser **Mermaid.js** diagram rendering, tabbed navigation, and SQLite history search.
-- **Strict Architecture Standards:**
-  - Complete, executable PostgreSQL 16 DDL (UUIDs, constraints, indexes; zero placeholders or `TODO`s).
-  - Explicit REST API contracts (methods, schemas, and HTTP status codes).
-  - Valid Mermaid `graph TD` topologies and `sequenceDiagram` transaction flows.
-  - 50,000 DAU baseline default with quantified peak RPS and latency formulas.
-- **Cloud Infrastructure & CI/CD Pipelines:** VPC network topologies (public, private compute, and isolated DB subnets) and complete GitHub Actions / GitLab CI deployment workflows with zero-downtime rolling/blue-green updates.
+- **Skill-Guided Design:** Bundles System Design Starter and loads focused cloud, data, API, or CI/CD references for relevant design stages.
+- **Interactive Dark-Mode Dashboard:** Live progress plus a diagram canvas with pan/zoom, selectable architecture/data/sequence diagrams, node inspection, and SVG export.
+- **Reviewable Design Bundle:** Exports the full specification, Mermaid source diagrams, and API contract artifacts when generated.
+- **Buildable Architecture:** Selects technologies to fit stated needs, surfaces unknowns as open decisions, and includes cloud prerequisites and release planning when relevant.
 
 ---
 
 ## 📦 Multi-Agent Pipeline Architecture
+
+### System Design Starter skill integration
+
+The complete skill and its references live in `system_design_agent/skills/system-design-starter/`. The requirements stage receives the core skill. Architecture, data/API, and deployment stages also receive only their relevant reference guides. This keeps the app self-contained and avoids downloading instructions or sending prompts to an external source at runtime. To update the skill, sync its `SKILL.md` and `references/` from the upstream repository and review the prompts and exporter.
 
 The pipeline routes context through 5 specialized agents with a self-correcting validation loop:
 
@@ -36,9 +37,9 @@ graph TD
     User["Developer / Product Lead Pitch"] --> Orchestrator["Pipeline Orchestrator & State Machine"]
     
     subgraph Agents ["Specialized Architecture Agents"]
-        S1["Stage 1: RequirementsAgent\n(4–6 FRs, 50k DAU NFR Formulas, Scope)"]
+        S1["Stage 1: RequirementsAgent\n(Product scope, assumptions, open decisions)"]
         S2["Stage 2: HLDAgent\n(Paradigm, Component Topology, VPC & Cloud Infra)"]
-        S3["Stage 3: LLDAgent\n(PostgreSQL 16 DDL, REST APIs, Sequence Diagram)"]
+        S3["Stage 3: LLDAgent\n(Data model, API contracts, diagrams)"]
         S4["Stage 4: ResilienceAgent\n(Optimistic Concurrency, Redis TTLs, Rate Limits)"]
         S5["Stage 5: ScaffoldingAgent\n(Repo Layout, 4-Phase Checklist, Cloud CI/CD)"]
     end
@@ -138,10 +139,12 @@ Open **`http://127.0.0.1:8000`** in your browser.
 1. **Interactive Pitch Input:** Type any rough idea or click a quick-fill example chip (e.g. *URL Shortener*, *Cloud GitOps Pipeline*, *Flash Sale Engine*, or *Collab Code Editor*).
 2. **Model Selection:** Choose **Gemini 2.5 Flash/Pro**, **Claude 3 Opus**, or **GPT-4o / o3-mini** on the fly.
 3. **Live Animated Stepper:** Watch real-time Server-Sent Events (SSE) as each agent executes and validates.
-4. **Live Mermaid Rendering:** Architecture topologies and transaction sequence diagrams render immediately in dark mode.
-5. **Specification Viewer:** Switch between Full Spec, Requirements, HLD, LLD, Resilience, and Scaffolding tabs.
-6. **Actions:** 1-click Markdown download (`.md`) and clipboard copy.
+4. **Interactive Visual Design:** Switch diagrams, zoom and pan the canvas, inspect nodes, copy Mermaid source, or download SVG.
+5. **Specification Viewer:** Switch between Full Spec, Requirements, HLD, LLD, Resilience, Scaffolding, and Visual Design tabs.
+6. **Actions:** Download Markdown or a ZIP design bundle, or copy the specification.
 7. **History Sidebar:** Search and re-open previous designs stored in `specs.db`.
+
+Each design is saved in `specs/<design-slug>/` with `system-design.md`, Mermaid source diagrams, and API contract files when the model produced those artifacts. Use **Download design bundle** in the viewer to get the folder as a ZIP. The expected daily users field is optional; when omitted, the generated document marks scale as unspecified.
 
 ---
 
@@ -191,15 +194,17 @@ python3 -m system_design_agent list
 
 ## 📋 The 5 Specification Sections Generated
 
-Every generated technical specification document strictly adheres to Principal Architect standards:
+The agent follows System Design Starter and tailors output to the idea and its constraints:
 
 | Section | Focus Areas | Key Output Artifacts |
 | :--- | :--- | :--- |
-| **1. Requirements & Core Assumptions** | Functional scope & quantified scale | 4–6 numbered FRs, 50k DAU baseline RPS calculations (average & peak), p95/p99 latency ceilings, read/write ratios, and v1 out-of-scope boundaries. |
-| **2. High-Level Design (HLD)** | Architectural paradigm & cloud network | Mermaid `graph TD` topology, Technology Stack Matrix with trade-off rationales, and Cloud VPC / Subnet / IAM topology (AWS/GCP/Azure). |
-| **3. Low-Level Design (LLD)** | Data schemas & transaction flows | Complete PostgreSQL 16 DDL (`CREATE TABLE`, constraints, B-tree/GIN indexes; zero placeholders), REST API contracts table, typed domain models (Python/TypeScript), and Mermaid `sequenceDiagram`. |
-| **4. Resilience, Concurrency & Security** | Race conditions & state hardening | Optimistic Concurrency Control (OCC) with version columns, Redis distributed lock patterns, Cache-Aside invalidation rules with TTLs, and sliding window rate limiting. |
-| **5. Developer Action Plan & Scaffolding** | Repository layout & deployment | Modular repository directory tree, **Cloud CI/CD & Deployment Pipeline blueprint** (GitHub Actions, container security scanning, DB migration pre-hooks, zero-downtime rolling/canary rollouts, and OpenTelemetry observability), and a 4-phase developer checklist. |
+| **1. Requirements & Assumptions** | Product scope, journeys, constraints, and open decisions | Requirements grounded in the prompt; unknown scale and policies labeled. |
+| **2. High-Level Design** | Architecture and technology choices | Mermaid topology, component responsibilities, alternatives, tradeoffs, and deployment architecture when requested. |
+| **3. Low-Level Design** | Data and interfaces | Data model, Mermaid ERD, API contract files when an API is in scope, and sequence flow. |
+| **4. Reliability & Security** | Failure behavior and operational safety | Data consistency, retries, identity, secrets, privacy, and recovery tailored to the design. |
+| **5. Delivery Plan** | Build and release path | Prerequisites, cloud deployment stages, CI/CD promotion, rollback, and implementation milestones. |
+
+The visual canvas gathers Mermaid diagrams from the generated design. If a model does not produce a diagram, the canvas reports that gap instead of inventing an architecture.
 
 ---
 

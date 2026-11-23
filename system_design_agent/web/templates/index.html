@@ -22,7 +22,7 @@
       <div class="logo-icon">⚡</div>
       <div>
         <h1 class="brand-title">System Design Agent</h1>
-        <span class="brand-subtitle">Principal Architect Specification Engine</span>
+        <span class="brand-subtitle">System Design Starter · Interactive Architecture Studio</span>
       </div>
     </div>
     
@@ -63,7 +63,7 @@
         <div class="panel-header">
           <h2>Transform Ambiguous Ideas into Production Blueprints</h2>
           <p class="panel-desc">
-            Enter any raw project pitch. The autonomous multi-agent pipeline will synthesize functional/non-functional requirements (50k DAU baseline), architecture topologies, PostgreSQL 16 DDL, API contracts, resilience rules, and a 4-phase developer checklist.
+            Start with an idea or an existing project. The agent follows System Design Starter to create a practical architecture, data model, API and deployment plan, then explore the diagrams on an interactive canvas.
           </p>
         </div>
 
@@ -96,9 +96,9 @@ e.g. Build a high-throughput URL shortener with real-time analytics, vanity slug
         <!-- Scale Configuration -->
         <div class="grid-2">
           <div class="form-group">
-            <label for="targetDauInput">Target Scale Baseline (DAU)</label>
-            <input type="number" id="targetDauInput" value="50000" step="10000" min="1000" class="input-text">
-            <span class="input-hint">Derives average and peak RPS, storage sizing, and concurrency rules.</span>
+            <label for="targetDauInput">Expected daily active users <span class="dim">(Optional)</span></label>
+            <input type="number" id="targetDauInput" value="" placeholder="Leave blank if unknown" step="1000" min="1" class="input-text">
+            <span class="input-hint">If unknown, the design will label scale as an open decision instead of inventing traffic targets.</span>
           </div>
 
           <div class="form-group">
@@ -133,8 +133,9 @@ e.g. Build a high-throughput URL shortener with real-time analytics, vanity slug
             <span>✨</span> Generate with Gemini
           </button>
           <button class="btn btn-secondary btn-lg" id="btnMockGenerate">
-            <span>🧪</span> Dry Run (Mock 0 Cost)
+            <span>🧪</span> Dry Run (sample, 0 cost)
           </button>
+          <p class="input-hint">Dry Run uses a fixed example design to preview the pipeline and canvas. Use a connected model for a design based on your idea.</p>
         </div>
       </section>
 
@@ -155,7 +156,7 @@ e.g. Build a high-throughput URL shortener with real-time analytics, vanity slug
               <div class="step-indicator">1</div>
               <div class="step-info">
                 <h4>Stage 1: Requirements & Core Assumptions</h4>
-                <p>Synthesizing 4–6 FRs, 50k DAU NFR throughput/latency formulas, and v1 scope</p>
+                <p>Identifying key workflows, quality needs, assumptions, and open decisions</p>
               </div>
             </div>
             <div class="step-item" id="step-HLD">
@@ -169,7 +170,7 @@ e.g. Build a high-throughput URL shortener with real-time analytics, vanity slug
               <div class="step-indicator">3</div>
               <div class="step-info">
                 <h4>Stage 3: Low-Level Design (LLD)</h4>
-                <p>Complete PostgreSQL 16 DDL, REST API contracts, typed domain models & sequence flow</p>
+                <p>Data model, API contracts, typed domain models & sequence flow when relevant</p>
               </div>
             </div>
             <div class="step-item" id="step-RESILIENCE">
@@ -203,13 +204,16 @@ e.g. Build a high-throughput URL shortener with real-time analytics, vanity slug
           <div class="spec-title-group">
             <h2 id="specViewerTitle">Specification Document</h2>
             <div class="spec-meta-pills">
-              <span class="meta-pill" id="specMetaDau">50,000 DAU</span>
+              <span class="meta-pill" id="specMetaDau">Scale unspecified</span>
               <span class="meta-pill" id="specMetaDuration">Duration: 0s</span>
               <span class="meta-pill" id="specMetaTokens">Tokens: 0</span>
               <span class="meta-pill status-pill valid" id="specMetaStatus">PASSED</span>
             </div>
           </div>
           <div class="spec-actions">
+            <button class="btn btn-secondary btn-sm" id="btnDownloadBundle">
+              📦 Download design bundle
+            </button>
             <button class="btn btn-secondary btn-sm" id="btnCopyMarkdown">
               📋 Copy Markdown
             </button>
@@ -227,7 +231,34 @@ e.g. Build a high-throughput URL shortener with real-time analytics, vanity slug
           <button class="spec-tab" data-tab="lld">💾 3. LLD & Schemas</button>
           <button class="spec-tab" data-tab="resilience">🛡️ 4. Resilience & Security</button>
           <button class="spec-tab" data-tab="scaffolding">🚀 5. Action Plan & Scaffolding</button>
+          <button class="spec-tab" data-tab="visual">🗺️ Visual Design</button>
         </nav>
+
+        <section class="visual-design-panel" id="visualDesignPanel" hidden aria-label="Interactive architecture diagrams">
+          <div class="diagram-toolbar">
+            <label for="diagramSelect">Diagram</label>
+            <select id="diagramSelect" class="select diagram-select" aria-label="Choose a design diagram"></select>
+            <div class="diagram-actions">
+              <button class="btn btn-secondary btn-sm" id="diagramZoomOut" aria-label="Zoom out">−</button>
+              <button class="btn btn-secondary btn-sm" id="diagramZoomIn" aria-label="Zoom in">+</button>
+              <button class="btn btn-secondary btn-sm" id="diagramFit">Fit</button>
+              <button class="btn btn-secondary btn-sm" id="diagramCopy">Copy source</button>
+              <button class="btn btn-primary btn-sm" id="diagramDownload">Download SVG</button>
+            </div>
+          </div>
+          <p class="diagram-help">Scroll to zoom, drag to pan, or select a node to inspect it.</p>
+          <div class="diagram-layout">
+            <div class="diagram-viewport" id="diagramViewport" tabindex="0" aria-label="Interactive diagram canvas">
+              <div class="diagram-canvas-layer" id="diagramCanvasLayer"></div>
+              <div class="diagram-empty" id="diagramEmpty" hidden>No Mermaid diagrams were found in this design.</div>
+            </div>
+            <aside class="diagram-inspector" aria-live="polite">
+              <span class="eyebrow">SELECTED COMPONENT</span>
+              <h3 id="diagramNodeTitle">Choose a node</h3>
+              <p id="diagramNodeDescription">Click any diagram component to inspect its label.</p>
+            </aside>
+          </div>
+        </section>
 
         <!-- Document Content Output Container -->
         <div class="markdown-container" id="specRenderedOutput">
@@ -290,8 +321,8 @@ e.g. Build a high-throughput URL shortener with real-time analytics, vanity slug
         </div>
 
         <div class="form-group">
-          <label for="settingsDefaultDau">Default Scale Baseline (DAU)</label>
-          <input type="number" id="settingsDefaultDau" value="50000" class="input-text">
+          <label for="settingsDefaultDau">Default Expected Daily Active Users <span class="dim">(Optional)</span></label>
+          <input type="number" id="settingsDefaultDau" placeholder="Leave blank if unknown" class="input-text">
         </div>
       </div>
       <div class="modal-footer">

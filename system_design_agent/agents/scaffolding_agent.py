@@ -9,6 +9,8 @@ from system_design_agent.prompts.stage5_scaffolding import STAGE5_PROMPT_TEMPLAT
 
 
 class ScaffoldingAgent(BaseAgent):
+    skill_references = ("cloud-deployment", "ci-cd-deployment")
+
     def run(self, pitch: str, hld_summary: str) -> tuple[ScaffoldingSection, int]:
         prompt = STAGE5_PROMPT_TEMPLATE.format(
             pitch=pitch.strip(),

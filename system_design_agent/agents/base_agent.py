@@ -10,11 +10,14 @@ from typing import Optional
 from system_design_agent.config import AgentConfig
 from system_design_agent.llm.base import LLMClient, LLMResponse
 from system_design_agent.prompts.system_persona import PRINCIPAL_ARCHITECT_PERSONA
+from system_design_agent.prompts.skill_context import load_skill_context
 
 logger = logging.getLogger(__name__)
 
 
 class BaseAgent:
+    skill_references: tuple[str, ...] = ()
+
     def __init__(self, client: LLMClient, config: AgentConfig):
         self.client = client
         self.config = config
@@ -26,7 +29,10 @@ class BaseAgent:
         max_retries: Optional[int] = None,
     ) -> LLMResponse:
         retries = max_retries or self.config.max_retries
-        sys_prompt = system_prompt or PRINCIPAL_ARCHITECT_PERSONA
+        sys_prompt = system_prompt or (
+            f"{PRINCIPAL_ARCHITECT_PERSONA}\n\n"
+            f"{load_skill_context(self.skill_references)}"
+        )
 
         for attempt in range(1, retries + 1):
             try:

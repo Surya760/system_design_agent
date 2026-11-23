@@ -26,8 +26,8 @@ class SpecValidator:
         else:
             if not re.search(r"FR-\d+|1\.\s+\*\*|Functional Requirements", sec1, re.IGNORECASE):
                 report.add_warning("Requirements", "Section 1 should list explicitly numbered functional requirements (e.g., FR-1, FR-2).")
-            if not re.search(r"RPS|throughput|DAU", sec1, re.IGNORECASE):
-                report.add_warning("Requirements", "Section 1 non-functional requirements should specify quantified throughput / peak RPS.")
+            if not re.search(r"scale|availability|latency|privacy|security|cost|reliability|performance", sec1, re.IGNORECASE):
+                report.add_warning("Requirements", "Section 1 should identify quality needs or state which ones remain open.")
 
         # Section 2 Validation (HLD)
         sec2 = spec.hld.raw_markdown
@@ -43,7 +43,7 @@ class SpecValidator:
             if not has_table:
                 report.add_warning("HLD.TechStack", "Section 2 should include a markdown Technology Stack Matrix table.")
 
-            if not re.search(r"vpc|subnet|ecs|eks|fargate|kubernetes|cloud|hosting", sec2, re.IGNORECASE):
+            if re.search(r"cloud|deploy|hosting|gcp|aws|azure", spec.pitch, re.IGNORECASE) and not re.search(r"vpc|subnet|ecs|eks|fargate|kubernetes|cloud|hosting|deployment", sec2, re.IGNORECASE):
                 report.add_warning("HLD.CloudInfra", "Section 2 should detail Cloud Infrastructure & Network Topology (e.g. VPC, subnets, managed compute).")
 
         # Section 3 Validation (LLD)
@@ -51,10 +51,11 @@ class SpecValidator:
         if not sec3 or len(sec3.strip()) < 100:
             report.add_error("LLD", "Section 3 (LLD) content is missing or too brief.")
         else:
-            valid_sql, sql_errs = SQLValidator.validate_markdown(sec3)
-            if not valid_sql:
-                for err in sql_errs:
-                    report.add_error("LLD.SQL", err)
+            if re.search(r"```sql\b", sec3, re.IGNORECASE):
+                valid_sql, sql_errs = SQLValidator.validate_markdown(sec3)
+                if not valid_sql:
+                    for err in sql_errs:
+                        report.add_error("LLD.SQL", err)
 
             valid_m, m_errs = MermaidValidator.validate_markdown(sec3)
             if not valid_m:
@@ -69,21 +70,23 @@ class SpecValidator:
         if not sec4 or len(sec4.strip()) < 80:
             report.add_error("Resilience", "Section 4 (Resilience & Security) content is missing or too brief.")
         else:
-            if not re.search(r"concurrency|optimistic|lock|version", sec4, re.IGNORECASE):
-                report.add_warning("Resilience", "Section 4 should explicitly cover concurrency control and race condition handling.")
-            if not re.search(r"cache|ttl|redis", sec4, re.IGNORECASE):
-                report.add_warning("Resilience", "Section 4 should specify cache TTLs and invalidation policies.")
+            if not re.search(r"concurrency|idempot|transaction|consistency|retry", sec4, re.IGNORECASE):
+                report.add_warning("Resilience", "Section 4 should address consistency, retries, or concurrency where relevant.")
 
         # Section 5 Validation (Scaffolding & Plan)
         sec5 = spec.scaffolding.raw_markdown
         if not sec5 or len(sec5.strip()) < 80:
             report.add_error("Scaffolding", "Section 5 (Developer Action Plan) content is missing or too brief.")
         else:
-            if "- [ ]" not in sec5 and "* [ ]" not in sec5:
-                report.add_warning("Scaffolding", "Section 5 should contain a checkbox-formatted 4-phase sequential task list.")
-            if "Phase 1" not in sec5:
-                report.add_warning("Scaffolding", "Section 5 implementation checklist should be organized by Phase 1 to Phase 4.")
+            if not re.search(r"milestone|implementation|acceptance criteria|checklist|phase", sec5, re.IGNORECASE):
+                report.add_warning("Scaffolding", "Section 5 should include dependency-aware implementation steps and acceptance criteria.")
             if not re.search(r"ci|cd|pipeline|deployment|rollout|docker|terraform", sec5, re.IGNORECASE):
                 report.add_warning("Scaffolding.CloudPipeline", "Section 5 should describe the Cloud CI/CD & Deployment Pipeline.")
+
+        if re.search(r"\b(api|rest|graphql|endpoint|webhook)\b", spec.pitch, re.IGNORECASE):
+            if "openapi:" not in sec3.lower() and "```json" not in sec3.lower():
+                report.add_warning("LLD.APIContract", "An API is in scope; include a machine-readable contract as well as readable API documentation.")
+        if re.search(r"create table|database|persistent|stored", sec3, re.IGNORECASE) and "erdiagram" not in sec3.lower():
+            report.add_warning("LLD.DataModel", "Include a Mermaid ER diagram when the selected data model has meaningful relationships.")
 
         return report

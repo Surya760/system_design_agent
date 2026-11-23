@@ -65,7 +65,7 @@ class AgentConfig:
     output_dir: Path = field(default_factory=lambda: Path("specs"))
 
     # Default Scale Baseline
-    default_dau: int = 50_000
+    default_dau: int = 0
 
     def resolve_provider(self) -> str:
         """Auto-detect provider if not explicitly declared."""

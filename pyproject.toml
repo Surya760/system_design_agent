@@ -20,3 +20,9 @@ dev = [
 
 [project.scripts]
 system-design-agent = "system_design_agent.cli:main"
+
+[tool.setuptools.package-data]
+system_design_agent = [
+  "skills/system-design-starter/*.md",
+  "skills/system-design-starter/references/*.md",
+]

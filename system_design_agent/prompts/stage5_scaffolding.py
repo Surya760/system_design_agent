@@ -17,21 +17,17 @@ Required Output Structure:
 #### Repository Directory Tree
 Provide a complete, production-ready directory layout suited for the chosen technology stack (e.g., FastAPI, Node/Express, or Go). Include configuration, migrations, domain models, services, API routers, workers, tests, IaC (Terraform/Helm), and CI/CD workflows.
 
-#### Cloud CI/CD & Deployment Pipeline Blueprint
-Specify the automated deployment pipeline for shipping code to the cloud:
-- Continuous Integration (CI): Linting & formatting check, unit and integration test pass, container image build, vulnerability & secret scanning (e.g., Trivy, GitGuardian).
-- Continuous Delivery (CD): Push versioned image to Container Registry (e.g., AWS ECR / GCP Artifact Registry), automated pre-deployment DB migration job (Alembic/Prisma/Flyway), and zero-downtime deployment rollout (e.g., Rolling Update with minimum healthy percent = 100%, Blue/Green with ALB traffic shifting, or Canary).
-- Infrastructure as Code (IaC): Concrete Terraform or CloudFormation module layout for provisioning VPC, compute, and databases.
-- Observability & Monitoring: Container health check probes (`/health/live`, `/health/ready`), Prometheus/CloudWatch metric alarms, structured JSON log streaming, and distributed tracing (OpenTelemetry).
+#### Cloud Deployment and CI/CD Plan
+Tailor deployment stages and CI/CD to the selected provider and project. Separate the product's runtime/data pipeline from the CI/CD release pipeline. Cover prerequisites, test/security gates, immutable artifact publication, environment promotion, approvals, configuration/secrets, infrastructure changes, observability, and rollback/recovery. Cite official current support sources when available; mark unverified claims.
 
 #### Sequential Implementation Checklist
-Provide a comprehensive 4-phase, checkbox-formatted (`- [ ]`) task list designed for junior and mid-level developers:
+Provide a dependency-aware, checkbox-formatted (`- [ ]`) task list with acceptance criteria:
 - Phase 1: Database Setup, Migrations & Core Models
 - Phase 2: Core Domain Logic & Service Layer
 - Phase 3: API Endpoints, Validation & Auth Middleware
 - Phase 4: Async Workers, Caching, Edge Cases & Integration Tests
 
-Each phase must contain 4–6 specific, granular tasks.
+Tailor milestones to the requested project; do not force four phases or a fixed number of tasks.
 
 Output format: Return ONLY the GitHub-flavored markdown for Section 5.
 """

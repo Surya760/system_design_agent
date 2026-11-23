@@ -14,21 +14,20 @@ LLD & Schema Context:
 Required Output Structure:
 ### 4. Resilience, Concurrency & Security
 
-#### Concurrency & State Control
-- Specific mechanism for race conditions (e.g., Optimistic locking via integer `version` column with code/SQL snippet, Redis distributed locks `Redlock` with TTL, or DB transactions with specific isolation levels like `REPEATABLE READ`).
-- Explain the exact conflict resolution path when two concurrent requests hit the same resource.
+#### Reliability, Consistency & Recovery
+- Select retry, idempotency, concurrency, and transaction mechanisms that fit the actual workflow. Explain failure modes and the conflict resolution path. Avoid adding Redis or distributed locks without a demonstrated need.
 
-#### Caching & Invalidation Rules
-- Explicit caching pattern (e.g., Cache-Aside, Write-Through).
-- Cache key naming conventions (e.g., `namespace:{{id}}:attribute`).
-- Concrete TTLs (Time-To-Live in seconds/minutes).
-- Synchronous or asynchronous invalidation triggers.
-- Protection against cache stampede / thundering herd and negative caching.
+#### Caching (when useful)
+- Explain whether a cache is justified. If included, state its access pattern, invalidation, and how TTLs will be selected; label unmeasured values as proposals.
 
 #### Security & Rate Limiting
-- Authentication & Authorization: Exact token standard (e.g., RS256 JWT in Authorization Bearer vs secure HTTP-only cookies, refresh token rotation).
-- Rate Limiting: Algorithm (e.g., sliding window counter in Redis), explicit limits for authenticated vs unauthenticated traffic, burst thresholds.
-- Input validation, SQL injection prevention, and encryption at rest / in transit.
+- Authentication and authorization boundaries and least-privilege identities.
+- Rate limits based on vendor quotas and expected load; state unknown quotas as prerequisites instead of inventing thresholds.
+- Input validation, encryption, secret handling, privacy/retention, and observability appropriate to the data.
+
+#### CI/CD Deployment and Recovery
+- Describe validation, artifact build and promotion, environment separation, secrets/identity, approvals, and rollback when release automation is in scope.
+- For data-processing systems, distinguish code rollback from replay or compensation of data already written.
 
 Output format: Return ONLY the GitHub-flavored markdown for Section 4.
 """

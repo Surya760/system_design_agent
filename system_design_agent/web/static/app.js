@@ -6,7 +6,7 @@
 mermaid.initialize({
   startOnLoad: false,
   theme: 'dark',
-  securityLevel: 'loose',
+  securityLevel: 'strict',
   fontFamily: 'Inter, sans-serif',
 });
 
@@ -18,6 +18,12 @@ const state = {
   currentSpecMarkdown: '',
   timerInterval: null,
   timerSeconds: 0,
+  diagrams: [],
+  activeDiagram: 0,
+  canvasScale: 1,
+  canvasX: 0,
+  canvasY: 0,
+  canvasPointer: null,
 };
 
 // DOM Elements
@@ -47,6 +53,7 @@ const elements = {
   btnToggleOpenAIKey: document.getElementById('btnToggleOpenAIKey'),
   btnCopyMarkdown: document.getElementById('btnCopyMarkdown'),
   btnDownloadMarkdown: document.getElementById('btnDownloadMarkdown'),
+  btnDownloadBundle: document.getElementById('btnDownloadBundle'),
   
   // Containers
   specHistoryList: document.getElementById('specHistoryList'),
@@ -71,6 +78,13 @@ const elements = {
   specMetaTokens: document.getElementById('specMetaTokens'),
   specMetaStatus: document.getElementById('specMetaStatus'),
   specRenderedOutput: document.getElementById('specRenderedOutput'),
+  visualDesignPanel: document.getElementById('visualDesignPanel'),
+  diagramSelect: document.getElementById('diagramSelect'),
+  diagramViewport: document.getElementById('diagramViewport'),
+  diagramCanvasLayer: document.getElementById('diagramCanvasLayer'),
+  diagramEmpty: document.getElementById('diagramEmpty'),
+  diagramNodeTitle: document.getElementById('diagramNodeTitle'),
+  diagramNodeDescription: document.getElementById('diagramNodeDescription'),
   providerText: document.getElementById('providerText'),
 };
 
@@ -175,7 +189,7 @@ function renderHistoryList(specs) {
       <div class="history-item ${isActive ? 'active' : ''}" data-id="${s.id}">
         <div class="history-title" title="${escapeHtml(s.title)}">${escapeHtml(s.title)}</div>
         <div class="history-meta">
-          <span>${date} · ${(s.target_dau || 50000).toLocaleString()} DAU</span>
+      <span>${date} · ${s.target_dau ? `${s.target_dau.toLocaleString()} DAU` : 'Scale open'}</span>
           <span class="history-tag ${statusClass}">${statusText}</span>
         </div>
       </div>
@@ -211,7 +225,7 @@ async function renderSpecDocument(specData) {
   
   // Update Header Meta
   elements.specViewerTitle.textContent = specObj.title || 'Technical Specification';
-  elements.specMetaDau.textContent = `${(specObj.target_dau || 50000).toLocaleString()} DAU`;
+  elements.specMetaDau.textContent = specObj.target_dau ? `${specObj.target_dau.toLocaleString()} DAU` : 'Scale unspecified';
   elements.specMetaDuration.textContent = `Duration: ${specData.duration_seconds || specObj.duration_seconds || 0}s`;
   elements.specMetaTokens.textContent = `Tokens: ${(specData.tokens_used || specObj.tokens_used || 0).toLocaleString()}`;
   
@@ -231,6 +245,7 @@ async function renderSpecDocument(specData) {
     }
   }
   state.currentSpecMarkdown = fullMarkdown;
+  collectDiagrams(fullMarkdown);
 
   // Render full tab by default
   displayTabContent('full');
@@ -240,6 +255,15 @@ async function renderSpecDocument(specData) {
 
 function displayTabContent(tabName) {
   if (!state.currentSpecMarkdown) return;
+
+  if (tabName === 'visual') {
+    elements.specRenderedOutput.hidden = true;
+    elements.visualDesignPanel.hidden = false;
+    renderActiveDiagram();
+    return;
+  }
+  elements.specRenderedOutput.hidden = false;
+  elements.visualDesignPanel.hidden = true;
 
   let contentToRender = state.currentSpecMarkdown;
   if (tabName !== 'full') {
@@ -277,6 +301,98 @@ function displayTabContent(tabName) {
   }
 }
 
+function collectDiagrams(markdown) {
+  state.activeDiagram = 0;
+  const matches = [...markdown.matchAll(/```mermaid\s*\n([\s\S]*?)```/gi)];
+  state.diagrams = matches.map((match, index) => {
+    const source = match[1].trim();
+    const header = source.split('\n', 1)[0].trim();
+    const lower = source.toLowerCase();
+    let title = `Diagram ${index + 1}`;
+    if (header.startsWith('sequenceDiagram')) title = 'Request / Data Flow';
+    else if (header.startsWith('erDiagram')) title = 'Data Model';
+    else if (lower.includes('deployment') || lower.includes('environment')) title = 'Deployment';
+    else if (header.startsWith('graph') || header.startsWith('flowchart')) title = index === 0 ? 'Architecture' : title;
+    return { title, source };
+  });
+  const select = elements.diagramSelect;
+  select.replaceChildren();
+  state.diagrams.forEach((diagram, index) => {
+    const option = document.createElement('option');
+    option.value = String(index);
+    option.textContent = diagram.title;
+    select.appendChild(option);
+  });
+  elements.diagramEmpty.hidden = state.diagrams.length > 0;
+  select.disabled = state.diagrams.length === 0;
+}
+
+function updateCanvasTransform() {
+  elements.diagramCanvasLayer.style.transform = `translate(${state.canvasX}px, ${state.canvasY}px) scale(${state.canvasScale})`;
+}
+
+function fitDiagram() {
+  const svg = elements.diagramCanvasLayer.querySelector('svg');
+  if (!svg) return;
+  const viewBox = svg.viewBox.baseVal;
+  const box = elements.diagramViewport.getBoundingClientRect();
+  if (!viewBox.width || !viewBox.height || !box.width || !box.height) return;
+  const padding = 48;
+  state.canvasScale = Math.min((box.width - padding) / viewBox.width, (box.height - padding) / viewBox.height, 1.5);
+  state.canvasX = (box.width - viewBox.width * state.canvasScale) / 2;
+  state.canvasY = (box.height - viewBox.height * state.canvasScale) / 2;
+  updateCanvasTransform();
+}
+
+async function renderActiveDiagram() {
+  if (!state.diagrams.length) {
+    elements.diagramEmpty.hidden = false;
+    elements.diagramCanvasLayer.replaceChildren();
+    return;
+  }
+  elements.diagramEmpty.hidden = true;
+  const diagram = state.diagrams[state.activeDiagram];
+  if (!diagram) return;
+  elements.diagramSelect.value = String(state.activeDiagram);
+  elements.diagramNodeTitle.textContent = 'Choose a node';
+  elements.diagramNodeDescription.textContent = 'Click any diagram component to inspect its label.';
+  const renderId = `system-design-diagram-${state.currentSpec?.id || 'active'}-${state.activeDiagram}`.replace(/[^a-zA-Z0-9_-]/g, '-');
+  try {
+    const rendered = await mermaid.render(renderId, diagram.source);
+    const parsed = new DOMParser().parseFromString(rendered.svg, 'image/svg+xml');
+    const svg = parsed.documentElement;
+    if (parsed.querySelector('parsererror')) throw new Error('Could not parse the rendered diagram.');
+    const viewBox = svg.viewBox?.baseVal;
+    if (viewBox?.width && viewBox?.height) {
+      svg.setAttribute('width', String(viewBox.width));
+      svg.setAttribute('height', String(viewBox.height));
+    }
+    elements.diagramCanvasLayer.replaceChildren(document.importNode(svg, true));
+    elements.diagramCanvasLayer.querySelectorAll('.node').forEach((node) => {
+      node.setAttribute('tabindex', '0');
+      node.setAttribute('role', 'button');
+      const inspect = () => {
+        const label = node.textContent.trim().replace(/\s+/g, ' ');
+        elements.diagramNodeTitle.textContent = label || node.id || 'Diagram component';
+        elements.diagramNodeDescription.textContent = `Diagram: ${diagram.title}. This component is shown as a node in the generated architecture.`;
+      };
+      node.addEventListener('click', inspect);
+      node.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); inspect(); }
+      });
+    });
+    state.canvasScale = 1;
+    state.canvasX = 24;
+    state.canvasY = 24;
+    updateCanvasTransform();
+    requestAnimationFrame(fitDiagram);
+  } catch (error) {
+    elements.diagramCanvasLayer.replaceChildren();
+    elements.diagramEmpty.hidden = false;
+    elements.diagramEmpty.textContent = `This diagram could not be rendered: ${error.message}`;
+  }
+}
+
 // Helper: Split Markdown by 5 Sections
 function parseMarkdownSections(md) {
   const result = {};
@@ -304,7 +420,8 @@ async function startGeneration(isMock = false) {
   }
 
   const title = elements.pitchTitle.value.trim() || null;
-  const dau = parseInt(elements.targetDau.value, 10) || 50000;
+  const parsedDau = parseInt(elements.targetDau.value, 10);
+  const dau = Number.isFinite(parsedDau) && parsedDau > 0 ? parsedDau : 0;
   const model = elements.modelSelect.value;
   const isClaude = model.startsWith('claude');
   const isOpenAI = model.startsWith('gpt') || model.startsWith('o1') || model.startsWith('o3');
@@ -433,6 +550,72 @@ function setupEventListeners() {
     });
   });
 
+  elements.diagramSelect.addEventListener('change', async (event) => {
+    state.activeDiagram = Number(event.target.value) || 0;
+    await renderActiveDiagram();
+  });
+  document.getElementById('diagramZoomIn').addEventListener('click', () => {
+    state.canvasScale = Math.min(state.canvasScale * 1.2, 4);
+    updateCanvasTransform();
+  });
+  document.getElementById('diagramZoomOut').addEventListener('click', () => {
+    state.canvasScale = Math.max(state.canvasScale / 1.2, 0.25);
+    updateCanvasTransform();
+  });
+  document.getElementById('diagramFit').addEventListener('click', fitDiagram);
+  document.getElementById('diagramCopy').addEventListener('click', async () => {
+    const source = state.diagrams[state.activeDiagram]?.source;
+    if (!source) return;
+    try {
+      await navigator.clipboard.writeText(source);
+    } catch {
+      elements.diagramNodeDescription.textContent = 'Clipboard access is unavailable in this browser context.';
+    }
+  });
+  document.getElementById('diagramDownload').addEventListener('click', () => {
+    const svg = elements.diagramCanvasLayer.querySelector('svg');
+    if (!svg) return;
+    const source = new XMLSerializer().serializeToString(svg);
+    const blobUrl = URL.createObjectURL(new Blob([source], { type: 'image/svg+xml;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = `${state.diagrams[state.activeDiagram]?.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'design'}.svg`;
+    link.click();
+    URL.revokeObjectURL(blobUrl);
+  });
+  elements.diagramViewport.addEventListener('wheel', (event) => {
+    event.preventDefault();
+    const factor = event.deltaY < 0 ? 1.1 : 0.9;
+    const nextScale = Math.min(Math.max(state.canvasScale * factor, 0.25), 4);
+    const bounds = elements.diagramViewport.getBoundingClientRect();
+    const px = event.clientX - bounds.left;
+    const py = event.clientY - bounds.top;
+    const ratio = nextScale / state.canvasScale;
+    state.canvasX = px - (px - state.canvasX) * ratio;
+    state.canvasY = py - (py - state.canvasY) * ratio;
+    state.canvasScale = nextScale;
+    updateCanvasTransform();
+  }, { passive: false });
+  elements.diagramViewport.addEventListener('pointerdown', (event) => {
+    if (event.target.closest('.node')) return;
+    state.canvasPointer = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    elements.diagramViewport.setPointerCapture(event.pointerId);
+  });
+  elements.diagramViewport.addEventListener('pointermove', (event) => {
+    if (!state.canvasPointer || state.canvasPointer.id !== event.pointerId) return;
+    state.canvasX += event.clientX - state.canvasPointer.x;
+    state.canvasY += event.clientY - state.canvasPointer.y;
+    state.canvasPointer.x = event.clientX;
+    state.canvasPointer.y = event.clientY;
+    updateCanvasTransform();
+  });
+  const stopCanvasPan = () => { state.canvasPointer = null; };
+  elements.diagramViewport.addEventListener('pointerup', stopCanvasPan);
+  elements.diagramViewport.addEventListener('pointercancel', stopCanvasPan);
+  window.addEventListener('resize', () => {
+    if (!elements.visualDesignPanel.hidden) fitDiagram();
+  });
+
   // Copy Markdown
   elements.btnCopyMarkdown.addEventListener('click', async () => {
     if (!state.currentSpecMarkdown) return;
@@ -453,6 +636,10 @@ function setupEventListeners() {
     if (!state.currentSpec) return;
     const id = state.currentSpec.id;
     window.location.href = `/api/specs/${id}/download`;
+  });
+  elements.btnDownloadBundle.addEventListener('click', () => {
+    if (!state.currentSpec) return;
+    window.location.href = `/api/specs/${state.currentSpec.id}/bundle`;
   });
 
   // Search filter
@@ -515,7 +702,8 @@ function setupEventListeners() {
     if (oBaseUrl) localStorage.setItem('openai_base_url', oBaseUrl);
 
     const model = elements.settingsDefaultModel.value;
-    const dau = parseInt(elements.settingsDefaultDau.value, 10) || 50000;
+    const parsedDau = parseInt(elements.settingsDefaultDau.value, 10);
+    const dau = Number.isFinite(parsedDau) && parsedDau > 0 ? parsedDau : 0;
 
     try {
       await fetch('/api/config', {

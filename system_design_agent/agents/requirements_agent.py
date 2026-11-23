@@ -9,7 +9,7 @@ from system_design_agent.prompts.stage1_requirements import STAGE1_PROMPT_TEMPLA
 
 
 class RequirementsAgent(BaseAgent):
-    def run(self, pitch: str, target_dau: int = 50_000) -> tuple[RequirementsSection, int]:
+    def run(self, pitch: str, target_dau: int = 0) -> tuple[RequirementsSection, int]:
         prompt = STAGE1_PROMPT_TEMPLATE.format(
             pitch=pitch.strip(),
             target_dau=target_dau,

@@ -8,23 +8,20 @@ Analyze the following project pitch and generate Section 1: Requirements & Core 
 Project Pitch:
 \"\"\"{pitch}\"\"\"
 
-Target Baseline Scale: ~{target_dau:,} Daily Active Users (DAU) if not specified by user.
+Target scale: use only values provided by the user. If unknown, state a modest first-release assumption and explain which unknowns could change the design. Do not force the configured DAU value into requirements as a user fact.
 
 Required Output Structure:
 ### 1. Requirements & Core Assumptions
 
 #### Functional Requirements (FRs)
-Provide a minimum of 4–6 numbered, unambiguous system capabilities (FR-1, FR-2, etc.).
+List the key first-release capabilities as concise, unambiguous requirements. Use numbered IDs when they improve traceability.
 
 #### Non-Functional Requirements (NFRs)
-Provide explicit, quantified metrics:
-- Throughput & RPS: Derive average and peak RPS explicitly from the {target_dau:,} DAU baseline (e.g., interactions/day -> average RPS -> peak RPS burst multiplier).
-- Latency Ceilings: Specify explicit percentiles (e.g., p95 < 150ms, p99 < 300ms for writes; p95 < 50ms for reads).
-- Read/Write Ratio: Specific ratio (e.g., 10:1 or 80:20).
-- Availability & Durability: Uptime SLA target (e.g., 99.9%) and RPO/RTO.
+Describe availability, latency, durability, security, privacy, and cost needs that follow from the pitch. Quantify only when the user supplies a target or label the value as a proposed decision for review. Do not invent traffic, latency, uptime, or recovery targets.
 
 #### Assumptions & Out-of-Scope (v1)
 - Explicit technical and deployment assumptions.
+- Open decisions that materially affect the architecture.
 - Explicit out-of-scope boundaries to prevent scope creep for this MVP.
 
 Output format: Return ONLY the GitHub-flavored markdown for Section 1. Do not include markdown code block backticks around the entire response.

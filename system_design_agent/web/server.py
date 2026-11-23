@@ -11,6 +11,8 @@ import sys
 import threading
 import time
 import urllib.parse
+from io import BytesIO
+from zipfile import ZIP_DEFLATED, ZipFile
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict, Optional
@@ -141,6 +143,32 @@ class DesignAgentHTTPHandler(SimpleHTTPRequestHandler):
             return
 
         # API: Download / view markdown
+        if path.startswith("/api/specs/") and path.endswith("/bundle"):
+            spec_id = path.split("/")[3]
+            spec_record = self.repo.get_by_id(spec_id)
+            if not spec_record:
+                self._send_error(404, f"Spec with ID '{spec_id}' not found")
+                return
+            bundle_dir = self.config.output_dir / spec_record["slug"]
+            archive = BytesIO()
+            with ZipFile(archive, "w", ZIP_DEFLATED) as bundle:
+                if bundle_dir.is_dir():
+                    for file_path in sorted(bundle_dir.rglob("*")):
+                        if file_path.is_file():
+                            bundle.write(file_path, file_path.relative_to(bundle_dir))
+                else:
+                    markdown_path = Path(spec_record.get("markdown_path") or "")
+                    if markdown_path.is_file():
+                        bundle.write(markdown_path, "system-design.md")
+            archive_bytes = archive.getvalue()
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/zip")
+            self.send_header("Content-Disposition", f"attachment; filename=\"{spec_record['slug']}-design.zip\"")
+            self.send_header("Content-Length", str(len(archive_bytes)))
+            self.end_headers()
+            self.wfile.write(archive_bytes)
+            return
+
         if path.startswith("/api/specs/") and (path.endswith("/download") or path.endswith("/markdown")):
             spec_id = path.split("/")[3]
             spec_record = self.repo.get_by_id(spec_id)
@@ -158,7 +186,7 @@ class DesignAgentHTTPHandler(SimpleHTTPRequestHandler):
                     pitch=data.get("pitch", ""),
                     id=data.get("id", spec_id),
                     created_at=data.get("created_at", ""),
-                    target_dau=data.get("target_dau", 50000),
+                    target_dau=data.get("target_dau", 0),
                 )
                 md_bytes = spec_obj.to_markdown().encode("utf-8")
 

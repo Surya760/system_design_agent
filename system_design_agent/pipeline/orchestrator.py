@@ -14,6 +14,7 @@ from system_design_agent.agents.lld_agent import LLDAgent
 from system_design_agent.agents.requirements_agent import RequirementsAgent
 from system_design_agent.agents.resilience_agent import ResilienceAgent
 from system_design_agent.agents.scaffolding_agent import ScaffoldingAgent
+from system_design_agent.artifacts import write_design_bundle
 from system_design_agent.config import AgentConfig
 from system_design_agent.llm import get_llm_client
 from system_design_agent.llm.base import LLMClient
@@ -63,7 +64,7 @@ class PipelineOrchestrator:
         on_stage_update: Optional[StageCallback] = None,
     ) -> SystemDesignSpec:
         """Executes the complete multi-stage technical specification pipeline."""
-        dau = target_dau or self.config.default_dau
+        dau = target_dau if target_dau is not None else self.config.default_dau
         spec_title = title or self._infer_title(pitch)
         spec = SystemDesignSpec(title=spec_title, pitch=pitch, target_dau=dau)
         state = PipelineState()
@@ -97,7 +98,7 @@ class PipelineOrchestrator:
             # -------------------------------------------------------------
             # Stage 3: Low-Level Design (LLD), Schemas & Sequence Flow
             # -------------------------------------------------------------
-            notify(PipelineStage.LLD, "Drafting PostgreSQL 16 DDL, REST Contracts, Domain Models & Sequence Flow...")
+            notify(PipelineStage.LLD, "Designing data models, API contracts, domain models & sequence flows...")
             s_start = time.time()
             sec3, t3 = self.lld_agent.run(pitch, sec2.raw_markdown)
             state.record_stage("lld", time.time() - s_start, t3)
@@ -141,6 +142,7 @@ class PipelineOrchestrator:
 
             markdown_content = spec.to_markdown()
             out_path.write_text(markdown_content, encoding="utf-8")
+            write_design_bundle(spec, out_path.parent / spec.generate_slug())
 
             self.repo.save(spec, markdown_path=str(out_path))
             notify(PipelineStage.COMPLETED, f"Specification successfully generated and saved to {out_path}")

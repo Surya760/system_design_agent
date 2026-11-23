@@ -11,22 +11,17 @@ Project Pitch:
 Section 1 Context:
 \"\"\"{stage1_context}\"\"\"
 
+Use the skill guidance in this prompt. Do not require a specific architecture pattern or provider when needs do not justify it. For current vendor support, use cited official documentation if available; otherwise flag status as unverified.
+
 Required Output Structure:
 ### 2. High-Level Design (HLD)
 
 #### Architectural Paradigm
-- Chosen pattern (e.g., Modular Monolith with Asynchronous Broker, Event-Driven Architecture, Microservices).
-- Concrete rationale detailing why this exact architecture fits this stage and scale (~{target_dau:,} DAU).
+- Chosen pattern (for example, a modular monolith or a distributed design when justified).
+- Concrete rationale tied to stated needs and known scale. Label any modest first-release assumptions.
 
 #### Component Topology Diagram
-A valid, renderable Mermaid `graph TD` diagram illustrating:
-- Client (Web/Mobile)
-- API Gateway / Reverse Proxy
-- Core Application Services
-- In-Memory Cache (e.g., Redis)
-- Message Broker / Task Queue (e.g., Redis Streams / RabbitMQ / Kafka)
-- Persistent Storage (e.g., PostgreSQL Primary + Read Replica)
-- Object Storage / External Services (if applicable)
+A valid, renderable Mermaid `graph TD` diagram illustrating the real actors, system boundary, necessary components, data stores, and external dependencies. Include a cache, broker, gateway, or replica only when the requirements justify it.
 
 Important Mermaid Rules:
 - Only use `graph TD` or `flowchart TD`.
@@ -40,14 +35,13 @@ A concise markdown table covering:
 - Primary Database
 - Cache / Message Broker
 - Infrastructure / Hosting (e.g., AWS ECS/EKS, RDS Multi-AZ, S3, CloudFront)
-Include a concise, 1-sentence trade-off rationale for each choice.
+Include why each choice fits, one meaningful tradeoff, an alternative, and the evidence/source needed to verify volatile support claims.
 
-#### Cloud Infrastructure & Network Topology
-- Cloud Provider Mapping (AWS, GCP, or Azure):
-  - Network Boundary: VPC CIDR block, Public Subnets (ALB, NAT Gateways), Private Application Subnets (Containers/Compute), and Isolated Data Subnets (RDS, Redis).
-  - Compute & Orchestration: Managed container platform (e.g., AWS ECS Fargate, GCP Cloud Run, or Kubernetes EKS/GKE) with target CPU/Memory allocations.
-  - Security & IAM: IAM roles with least-privilege, AWS Secrets Manager / GCP Secret Manager for credentials, KMS encryption keys.
-  - High Availability & Multi-AZ: Multi-AZ database replication, auto-scaling thresholds (target 70% CPU or queue backlog).
+#### Cloud Infrastructure & Network Topology (when deployment is requested)
+- Cloud Provider Mapping (use the user's provider choice, or compare reasonable options if unspecified):
+  - Environment boundaries, ingress/egress, managed compute, state, secret references, identity, telemetry, and prerequisites relevant to the selected architecture.
+  - Include CIDRs, instance sizes, or autoscaling thresholds only when supplied or clearly marked as values to size during implementation.
+- Include a separate Mermaid deployment diagram when the user requests a deployable/cloud design; show environment boundaries, ingress/egress, runtime, state, secrets/identity, telemetry, and CI/CD at an appropriate level.
 
 Output format: Return ONLY the GitHub-flavored markdown for Section 2.
 """

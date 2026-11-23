@@ -53,7 +53,7 @@ def handle_generate(args: argparse.Namespace) -> None:
             config.ollama_model = args.model
 
     resolved_provider = config.resolve_provider()
-    print(f"{BOLD}Target Scale:{RESET} ~{args.dau:,} DAU")
+    print(f"{BOLD}Target Scale:{RESET} ~{args.dau:,} DAU" if args.dau else f"{BOLD}Target Scale:{RESET} unspecified")
     print(f"{BOLD}Active LLM Provider:{RESET} {GREEN}{resolved_provider}{RESET}")
     print(f"{BOLD}Project Pitch:{RESET}\n{DIM}{textwrap.fill(args.pitch, width=78)}{RESET}\n")
 
@@ -134,8 +134,8 @@ def handle_interactive(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     custom_title = input(f"\nOptional Specification Title (Leave blank to auto-infer): ").strip()
-    dau_str = input(f"Target DAU baseline [Default 50,000]: ").strip()
-    dau = int(dau_str.replace(",", "")) if dau_str.isdigit() else 50_000
+    dau_str = input("Expected daily active users [optional; leave blank if unknown]: ").strip()
+    dau = int(dau_str.replace(",", "")) if dau_str.isdigit() else 0
 
     args.pitch = pitch
     args.title = custom_title or None
@@ -157,12 +157,13 @@ def handle_list(args: argparse.Namespace) -> None:
         print("Run: python3 -m system_design_agent generate \"Your idea here...\"")
         return
 
-    print(f"{BOLD}{'DATE':<20} {'ID':<10} {'SLUG':<30} {'DAU':<10} {'STATUS':<8}{RESET}")
+    print(f"{BOLD}{'DATE':<20} {'ID':<10} {'SLUG':<30} {'SCALE':<12} {'STATUS':<8}{RESET}")
     print("-" * 80)
     for s in specs:
         date_str = s['created_at'][:19].replace("T", " ")
         status = f"{GREEN}VALID{RESET}" if s['is_valid'] else f"{RED}WARN{RESET}"
-        print(f"{date_str:<20} {s['id'][:8]:<10} {s['slug'][:28]:<30} {s['target_dau']:<10} {status}")
+        scale = f"{s['target_dau']:,} DAU" if s['target_dau'] else "unspecified"
+        print(f"{date_str:<20} {s['id'][:8]:<10} {s['slug'][:28]:<30} {scale:<12} {status}")
     print("-" * 80)
 
 
@@ -177,7 +178,7 @@ def build_parser() -> argparse.ArgumentParser:
     gen_parser = subparsers.add_parser("generate", help="Generate a technical specification from a pitch")
     gen_parser.add_argument("pitch", type=str, help="Raw project idea or user pitch")
     gen_parser.add_argument("--title", type=str, default=None, help="Explicit title for the specification")
-    gen_parser.add_argument("--dau", type=int, default=50_000, help="Target Daily Active Users scale baseline (default: 50,000)")
+    gen_parser.add_argument("--dau", type=int, default=0, help="Expected Daily Active Users; omit if unknown")
     gen_parser.add_argument("--output", "-o", type=str, default=None, help="Output markdown file path")
     gen_parser.add_argument("--provider", "-p", type=str, choices=["gemini", "anthropic", "claude", "openai", "ollama", "mock"], default=None, help="LLM Provider override")
     gen_parser.add_argument("--model", "-m", type=str, default=None, help="Model name override")
@@ -188,7 +189,7 @@ def build_parser() -> argparse.ArgumentParser:
     # Command: mock (shortcut for dry run)
     mock_parser = subparsers.add_parser("mock", help="Execute a mock dry run pipeline (no external API calls)")
     mock_parser.add_argument("pitch", type=str, nargs="?", default="A high-throughput URL shortener with real-time click analytics and custom vanity domains.", help="Project pitch")
-    mock_parser.add_argument("--dau", type=int, default=50_000, help="Target DAU baseline")
+    mock_parser.add_argument("--dau", type=int, default=0, help="Expected Daily Active Users; omit if unknown")
     mock_parser.add_argument("--output", "-o", type=str, default=None, help="Output markdown path")
 
     # Command: list

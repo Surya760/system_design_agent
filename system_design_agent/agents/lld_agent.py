@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class LLDAgent(BaseAgent):
+    skill_references = ("api-contracts", "technology-and-data")
+
     def run(self, pitch: str, stage2_context: str) -> tuple[LLDSection, int]:
         prompt = STAGE3_PROMPT_TEMPLATE.format(
             pitch=pitch.strip(),
@@ -39,7 +41,7 @@ class LLDAgent(BaseAgent):
             heal_prompt = (
                 f"The following LLD markdown has validation issues:\n"
                 f"- {chr(10).join(issues)}\n\n"
-                f"REMINDER: SQL DDL must be 100% complete PostgreSQL 16 (no '...', no TODOs). "
+                f"REMINDER: Any relational SQL DDL must be complete for the selected database; do not force a database that the design does not need. "
                 f"Mermaid sequence diagrams must be valid syntax.\n\n"
                 f"Original Section 3:\n{content}\n\n"
                 f"Please fix all issues and return the corrected, complete Section 3 markdown."

@@ -9,6 +9,8 @@ from system_design_agent.prompts.stage4_resilience import STAGE4_PROMPT_TEMPLATE
 
 
 class ResilienceAgent(BaseAgent):
+    skill_references = ("cloud-deployment", "ci-cd-deployment")
+
     def run(self, pitch: str, stage3_context: str) -> tuple[ResilienceSection, int]:
         prompt = STAGE4_PROMPT_TEMPLATE.format(
             pitch=pitch.strip(),
